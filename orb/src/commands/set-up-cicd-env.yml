@@ -83,5 +83,13 @@ steps:
         echo $YARN_BUILD | base64 -d >$CICD_HOME/yarn_build.py
         chmod 755 $CICD_HOME/*.py
         # Set up git for promotions and things
-        git config --global user.email "circleci@unfur.ly"
+        if [ -z "$BITBUCKET_SSH_KEYS" ]; then
+          echo "BITBUCKET_SSH_KEYS is not set, skipping git config"
+        else
+          echo "BITBUCKET_SSH_KEYS is set, configuring git"
+          mkdir -p /home/circleci/.ssh && chmod 700 /home/circleci/.ssh
+          echo "$BITBUCKET_SSH_KEYS" >/home/circleci/.ssh/id_ed25519
+          chmod 600 /home/circleci/.ssh/id_ed25519
+        fi
+        git config --global user.email "circleci@calanalytics.com"
         git config --global user.name "CircleCI Pipeline"
