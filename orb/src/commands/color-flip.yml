@@ -20,7 +20,7 @@ parameters:
     description: "KVS Key to locate routing information"
 
 steps:
-  - set-up-unfurly-env
+  - set-up-cicd-env
   - run:
       environment:
         COLOR: <<parameters.color>>

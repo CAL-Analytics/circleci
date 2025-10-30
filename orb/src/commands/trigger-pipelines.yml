@@ -24,7 +24,7 @@ parameters:
 
 steps:
   - checkout
-  - set-up-unfurly-env
+  - set-up-cicd-env
   - run:
       environment:
         ENV_BRANCH_NAME: << parameters.env_branch_name >>

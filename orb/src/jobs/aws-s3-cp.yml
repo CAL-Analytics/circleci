@@ -60,12 +60,12 @@ steps:
       s3_cache_control: << parameters.s3_cache_control >>
       s3_content_type: << parameters.s3_content_type >>
       version_file: << parameters.version_file >>
-  - slack-notify:
-      event: fail
-      custom_message: "Failed :fire:"
-      slack_thread_id: << parameters.slack_thread_id >>
-  - slack-notify:
-      event: pass
-      custom_message: "Success :champagne:"
-      slack_thread_id: << parameters.slack_thread_id >>
+  # - slack-notify:
+  #     event: fail
+  #     custom_message: "Failed :fire:"
+  #     slack_thread_id: << parameters.slack_thread_id >>
+  # - slack-notify:
+  #     event: pass
+  #     custom_message: "Success :champagne:"
+  #     slack_thread_id: << parameters.slack_thread_id >>
 

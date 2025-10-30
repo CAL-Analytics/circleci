@@ -19,7 +19,7 @@ parameters:
     description: "Add build artifact versioning so we can easily see it live. Defaults to /version."
 
 steps:
-  - set-up-unfurly-env
+  - set-up-cicd-env
   - run:
       environment:
         APP_NAME: <<parameters.app_name>>

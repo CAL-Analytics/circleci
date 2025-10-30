@@ -55,12 +55,12 @@ steps:
       s3_metadata: << parameters.s3_metadata >>
       s3_metadata_directive: << parameters.s3_metadata_directive >>
       s3_cache_control: << parameters.s3_cache_control >>
-  - slack-notify:
-      event: fail
-      custom_message: "Failed :fire:"
-      slack_thread_id: << parameters.slack_thread_id >>
-  - slack-notify:
-      event: pass
-      custom_message: "Success :champagne:"
-      slack_thread_id: << parameters.slack_thread_id >>
+  # - slack-notify:
+  #     event: fail
+  #     custom_message: "Failed :fire:"
+  #     slack_thread_id: << parameters.slack_thread_id >>
+  # - slack-notify:
+  #     event: pass
+  #     custom_message: "Success :champagne:"
+  #     slack_thread_id: << parameters.slack_thread_id >>
 

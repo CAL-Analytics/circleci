@@ -23,7 +23,7 @@ parameters:
     description: "(Optional). Regex path for changes. Wrap in quotes and use a space as delimeter to add multiple paths or files. Examples: ^cdk/.* or app/file.xml or some/file/hello.*.yml"
 
 steps:
-  - set-up-unfurly-env
+  - set-up-cicd-env
   - run:
       environment:
         S3_BUCKET: <<parameters.s3_bucket>>

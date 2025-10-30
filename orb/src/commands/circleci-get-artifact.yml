@@ -12,7 +12,7 @@ parameters:
     description: "(Optional) Output file path. Will default to workspace/FILENAME"
 
 steps:
-  - set-up-unfurly-env
+  - set-up-cicd-env
   - run:
       environment:
         URL: << parameters.url >>

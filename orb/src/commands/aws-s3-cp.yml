@@ -33,7 +33,7 @@ parameters:
     description: "(Optional). Version the file with our get_version()"
 
 steps:
-  - set-up-unfurly-env
+  - set-up-cicd-env
   - run:
       environment:
         S3_BUCKET: <<parameters.s3_bucket>>

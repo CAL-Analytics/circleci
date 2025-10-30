@@ -12,7 +12,7 @@ parameters:
     description: "(Optional) If this is set it wont cancel the pipeline, the job still fails to prevent requires jobs from running."
 
 steps:
-  - set-up-unfurly-env
+  - set-up-cicd-env
   - run:
       environment:
         TRIGGER_FILES: <<parameters.trigger_files>>

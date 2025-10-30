@@ -10,7 +10,7 @@ parameters:
     description: "Space separated list of Items to invalidate. You can use any pattern acceptable to CloudFront."
 
 steps:
-  - set-up-unfurly-env
+  - set-up-cicd-env
   - run:
       environment:
         DISTRIBUTION: <<parameters.distribution>>

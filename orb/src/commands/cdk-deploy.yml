@@ -21,7 +21,7 @@ parameters:
 steps:
   - checkout
   - setup_remote_docker
-  - set-up-unfurly-env
+  - set-up-cicd-env
   - run:
       environment:
         CDK_ENV: << parameters.cdk_env >>

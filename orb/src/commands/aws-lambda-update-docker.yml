@@ -13,7 +13,7 @@ parameters:
     description: "The docker tag to deploy."
 
 steps:
-  - set-up-unfurly-env
+  - set-up-cicd-env
   - run:
       environment:
         FUNCTION_ARN: <<parameters.function_arn>>

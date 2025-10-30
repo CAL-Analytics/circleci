@@ -29,7 +29,7 @@ parameters:
     description: "Cache control to add to the files. i.e. max-age=86400"
 
 steps:
-  - set-up-unfurly-env
+  - set-up-cicd-env
   - run:
       environment:
         S3_BUCKET: <<parameters.s3_bucket>>

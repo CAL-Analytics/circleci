@@ -48,12 +48,12 @@ steps:
       cdk_lang: << parameters.cdk_lang >>
       poetry_path: << parameters.poetry_path >>
       poetry_install_cmd: << parameters.poetry_install_cmd >>
-  - slack-notify:
-      event: fail
-      custom_message: "Failed :fire:"
-      slack_thread_id: << parameters.slack_thread_id >>
-  - slack-notify:
-      event: pass
-      custom_message: "Success :champagne:"
-      slack_thread_id: << parameters.slack_thread_id >>
+  # - slack-notify:
+  #     event: fail
+  #     custom_message: "Failed :fire:"
+  #     slack_thread_id: << parameters.slack_thread_id >>
+  # - slack-notify:
+  #     event: pass
+  #     custom_message: "Success :champagne:"
+  #     slack_thread_id: << parameters.slack_thread_id >>
 

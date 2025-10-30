@@ -70,11 +70,11 @@ steps:
             dont_trigger_pipelines: << parameters.dont_trigger_pipelines >>
             repo_slug: << parameters.repo_slug >>
             trigger_parameters: << parameters.trigger_parameters >>
-  - slack-notify:
-      event: fail
-      custom_message: "Failed :fire:"
-      slack_thread_id: << parameters.slack_thread_id >>
-  - slack-notify:
-      event: pass
-      custom_message: "Success :champagne:"
-      slack_thread_id: << parameters.slack_thread_id >>
+  # - slack-notify:
+  #     event: fail
+  #     custom_message: "Failed :fire:"
+  #     slack_thread_id: << parameters.slack_thread_id >>
+  # - slack-notify:
+  #     event: pass
+  #     custom_message: "Success :champagne:"
+  #     slack_thread_id: << parameters.slack_thread_id >>

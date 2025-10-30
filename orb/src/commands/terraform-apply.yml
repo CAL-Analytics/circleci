@@ -17,7 +17,7 @@ parameters:
 steps:
   - checkout
   - setup_remote_docker
-  - set-up-unfurly-env
+  - set-up-cicd-env
   - run:
       environment:
         TF_ENV: << parameters.tf_env >>

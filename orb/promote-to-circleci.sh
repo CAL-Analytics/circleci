@@ -8,6 +8,13 @@ unset $FORCE
 SEM_VER=$2
 ORB_NAME=$1
 
+if [ "$2" == "GEN" ]; then
+   echo "*** Generating b64 files ***"
+   for i in `find . -name "*.py" -not -path "*/venv/*"`; do cat $i | base64 > $i.b64; done
+   for i in `find src/scripts/bin -type f -not -path "*/venv/*" -not -name "*.b64"`; do cat $i | base64 > $i.b64; done
+   exit
+fi
+
 echo "*** Generating b64 files ***"
 for i in `find . -name "*.py" -not -path "*/venv/*"`; do cat $i | base64 > $i.b64; done
 for i in `find src/scripts/bin -type f -not -path "*/venv/*" -not -name "*.b64"`; do cat $i | base64 > $i.b64; done

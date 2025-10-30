@@ -12,7 +12,7 @@ parameters:
     description: "Default path to create the file"
 
 steps:
-  - set-up-unfurly-env
+  - set-up-cicd-env
   - run:
       environment:
         BODY: <<parameters.body>>

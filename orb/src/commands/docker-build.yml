@@ -27,7 +27,7 @@ parameters:
     description: "(Optional). Comma separated list of build args to inject into the docker build. Example: PLUM_VERSION=6.0.0,BUILD_VERSION=24.05.07.33.3abcde"
 
 steps:
-  - set-up-unfurly-env
+  - set-up-cicd-env
   - run:
       environment:
         APP_NAME: << parameters.app_name >>

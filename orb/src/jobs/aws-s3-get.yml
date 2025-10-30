@@ -42,12 +42,12 @@ steps:
       s3_path: << parameters.s3_path >>
       file_name: << parameters.file_name >>
       extracted_root: << parameters.extracted_root >>
-  - slack-notify:
-      event: fail
-      custom_message: "Failed :fire:"
-      slack_thread_id: << parameters.slack_thread_id >>
-  - slack-notify:
-      event: pass
-      custom_message: "Success :champagne:"
-      slack_thread_id: << parameters.slack_thread_id >>
+  # - slack-notify:
+  #     event: fail
+  #     custom_message: "Failed :fire:"
+  #     slack_thread_id: << parameters.slack_thread_id >>
+  # - slack-notify:
+  #     event: pass
+  #     custom_message: "Success :champagne:"
+  #     slack_thread_id: << parameters.slack_thread_id >>
 
