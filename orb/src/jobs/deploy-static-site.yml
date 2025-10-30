@@ -1,0 +1,197 @@
+description: >
+  This job deploys a static site using an artifacts_file and aws s3 sync
+
+executor: default
+
+resource_class: small
+
+parameters:
+  artifacts_file:
+    type: string
+    default: ""
+    description: "Artifacts file to deploy. This will be pulled from S3 bucket named in global context: ARTIFACTS_BUCKET"
+  extracted_root:
+    type: string
+    default: ""
+    description: "Should the s3 get process extract the contents? If so, what is the root path you want it? i.e. artifacts/ or dist/"
+  s3_bucket_name:
+    type: string
+    description: "S3 bucket name OR SSM Parameter to find it. SSM Parameter should begin with /"
+  s3_bucket_path:
+    type: string
+    description: "S3 bucket path to sync into."
+  distribution:
+    type: string
+    description: "CloudFront Distribution ID OR SSM Parameter to find it. SSM Parameter should begin with /"
+  invalidate_items:
+    type: string
+    default: ""
+    description: "Space separated list of Items to invalidate. You can use any pattern acceptable to CloudFront."
+  no_delete:
+    type: string
+    default: ""
+    description: "If set, sync but don't delete files that aren't in source. Default to unset for a true sync."
+  s3_metadata:
+    type: string
+    default: ""
+    description: "Metadata to add to each file. i.e. key1=value1,key2=value2"
+  s3_metadata_directive:
+    type: string
+    default: ""
+    description: "Metadata Directive (ONLY used if metadata is set). Defaults to REPLACE. Can be COPY or REPLACE."
+  s3_cache_control:
+    type: string
+    default: ""
+    description: "Cache control to add to the files. i.e. max-age=86400"
+  llms_txt:
+    type: string
+    default: ""
+    description: "LLMs text file."
+  llms_full_txt:
+    type: string
+    default: ""
+    description: "LLMs full text file."
+  spa_index:
+    type: string
+    default: ""
+    description: "SPA index filename to set cache-control to 0."
+  version_json:
+    type: string
+    default: ""
+    description: "/version json file?"
+  ads_furl_js:
+    type: string
+    default: ""
+    description: "/ads/furl.js file?"
+  config_js:
+    type: string
+    default: ""
+    description: "/public/config.ENV.js file?"
+  blog_posts_json:
+    type: string
+    default: ""
+    description: "/public/blog-posts.json file?"
+  robots_txt_body:
+    type: string
+    default: ""
+    description: "Add a robots.txt. Only do this is in dev. Default to empty string."
+  slack_thread_id:
+    type: string
+    default: "thready"
+    description: "The Slack thread id for notifications."
+    
+steps:
+  # - checkout
+  - aws-s3-get:
+      s3_path: <<parameters.artifacts_file>>
+      extracted_root: <<parameters.extracted_root>>
+  - aws-s3-sync:
+      s3_bucket: <<parameters.s3_bucket_name>>
+      s3_path: <<parameters.s3_bucket_path>>
+      sync_files: <<parameters.extracted_root>>
+      no_delete: <<parameters.no_delete>>
+      s3_metadata: <<parameters.s3_metadata>>
+      s3_metadata_directive: <<parameters.s3_metadata_directive>>
+      s3_cache_control: <<parameters.s3_cache_control>>
+  - when:
+      condition: << parameters.llms_txt >>
+      steps:
+        - aws-s3-cp:
+            s3_bucket: <<parameters.s3_bucket_name>>
+            s3_path: <<parameters.s3_bucket_path>>/
+            sync_files: <<parameters.llms_txt>>
+            s3_metadata: <<parameters.s3_metadata>>
+            s3_metadata_directive: <<parameters.s3_metadata_directive>>
+            s3_cache_control: max-age=3600
+            s3_content_type: "text/plain"
+  - when:
+      condition: << parameters.llms_full_txt >>
+      steps:
+        - aws-s3-cp:
+            s3_bucket: <<parameters.s3_bucket_name>>
+            s3_path: <<parameters.s3_bucket_path>>/
+            sync_files: <<parameters.llms_full_txt>>
+            s3_metadata: <<parameters.s3_metadata>>
+            s3_metadata_directive: <<parameters.s3_metadata_directive>>
+            s3_cache_control: max-age=3600
+            s3_content_type: "text/plain"
+  - when:
+      condition: << parameters.spa_index >>
+      steps:
+        - aws-s3-cp:
+            s3_bucket: <<parameters.s3_bucket_name>>
+            s3_path: <<parameters.s3_bucket_path>>/
+            sync_files: <<parameters.spa_index>>
+            s3_metadata: <<parameters.s3_metadata>>
+            s3_metadata_directive: <<parameters.s3_metadata_directive>>
+            s3_cache_control: max-age=0
+  - when:
+      condition: << parameters.version_json >>
+      steps:
+        - aws-s3-cp:
+            s3_bucket: <<parameters.s3_bucket_name>>
+            s3_path: <<parameters.s3_bucket_path>>/
+            sync_files: <<parameters.version_json>>
+            s3_metadata: <<parameters.s3_metadata>>
+            s3_metadata_directive: <<parameters.s3_metadata_directive>>
+            s3_cache_control: <<parameters.s3_cache_control>> 
+            s3_content_type: "application/json"
+  - when:
+      condition: << parameters.ads_furl_js >>
+      steps:
+        - aws-s3-cp:
+            s3_bucket: <<parameters.s3_bucket_name>>
+            s3_path: <<parameters.s3_bucket_path>>/ads/
+            sync_files: <<parameters.ads_furl_js>>
+            version_file: "yes"
+            s3_metadata: <<parameters.s3_metadata>>
+            s3_metadata_directive: <<parameters.s3_metadata_directive>>
+            s3_cache_control: <<parameters.s3_cache_control>> 
+            s3_content_type: "text/javascript"
+  - when:
+      condition: << parameters.config_js >>
+      steps:
+        - aws-s3-cp:
+            s3_bucket: <<parameters.s3_bucket_name>>
+            s3_path: <<parameters.s3_bucket_path>>/config.js
+            sync_files: <<parameters.config_js>>
+            s3_metadata: <<parameters.s3_metadata>>
+            s3_metadata_directive: <<parameters.s3_metadata_directive>>
+            s3_cache_control: <<parameters.s3_cache_control>> 
+            s3_content_type: "text/javascript"
+  - when:
+      condition: << parameters.blog_posts_json >>
+      steps:
+        - aws-s3-cp:
+            s3_bucket: <<parameters.s3_bucket_name>>
+            s3_path: <<parameters.s3_bucket_path>>/blog/blog-posts.json
+            sync_files: <<parameters.blog_posts_json>>
+            s3_metadata: <<parameters.s3_metadata>>
+            s3_metadata_directive: <<parameters.s3_metadata_directive>>
+            s3_cache_control: max-age=300
+            s3_content_type: "application/json"
+  - when:
+      condition: << parameters.robots_txt_body >>
+      steps:
+        - create-robots-txt:
+            body: <<parameters.robots_txt_body>>
+            robots_path: <<parameters.extracted_root>>
+        - aws-s3-cp:
+            s3_bucket: <<parameters.s3_bucket_name>>
+            s3_path: <<parameters.s3_bucket_path>>/
+            sync_files: <<parameters.extracted_root>>/robots.txt
+            s3_metadata: <<parameters.s3_metadata>>
+            s3_metadata_directive: <<parameters.s3_metadata_directive>>
+            s3_cache_control: <<parameters.s3_cache_control>> 
+            s3_content_type: "text/plain"
+  - aws-cloudfront-invalidation:
+      distribution: <<parameters.distribution>>
+      invalidate_items: <<parameters.invalidate_items>>
+  - slack-notify:
+      event: fail
+      custom_message: "Failed :fire:"
+      slack_thread_id: << parameters.slack_thread_id >>
+  - slack-notify:
+      event: pass
+      custom_message: "Success :champagne:"
+      slack_thread_id: << parameters.slack_thread_id >>

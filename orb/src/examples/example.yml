@@ -1,0 +1,48 @@
+description: >
+  Sample example description.
+# Provide a use-case based example for using this orb.
+# Everything in the `usage` section will be displayed in the orb registry.
+# Comments are not retained.
+usage:
+  version: 2.1
+
+  orbs:
+    cicd: calanalytics/cicd@0.0.30
+
+  workflows:
+    calanalytics-dev:
+      jobs:
+        - cicd/cdk-diff:
+            context: 
+              - global
+              - calanalytics-dev
+            cdk-env: dev
+            cdk-lang: python
+            filters:
+              branches:
+                only:
+                  - develop
+        - Hold-for-Deploy-Approval:
+            type: approval
+            requires:
+              - cicd/cdk-diff
+        - cicd/cdk-deploy:
+            requires:
+              - Hold-for-Deploy-Approval
+            context: 
+              - global
+              - calanalytics-dev
+            cdk-env: dev
+            cdk-lang: python
+        - Hold-for-Promote-Approval:
+            type: approval
+            requires:
+              - cicd/cdk-deploy
+        - cicd/git-promote:
+            requires:
+              - Hold-for-Promote-Approval
+            context: 
+              - global
+              - calanalytics-dev
+            env-branch-name: develop
+            next-env-branch-name: uat

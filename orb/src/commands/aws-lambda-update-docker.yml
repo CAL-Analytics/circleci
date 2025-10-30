@@ -1,0 +1,24 @@
+description: >
+  AWS Helper command to update the docker container on a lambda function
+
+parameters:
+  function_arn:
+    type: string
+    description: "Function Arn. Can be an SSM path"
+  app_name:
+    type: string
+    description: "This will be the app name as built / ecr repository name."
+  tag:
+    type: string
+    description: "The docker tag to deploy."
+
+steps:
+  - set-up-unfurly-env
+  - run:
+      environment:
+        FUNCTION_ARN: <<parameters.function_arn>>
+        APP_NAME: <<parameters.app_name>>
+        TAG: <<parameters.tag>>
+      name: lambda update docker
+      # shell: /bin/xonsh -i
+      command: aws_lambda_update_docker.py

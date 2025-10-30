@@ -1,0 +1,31 @@
+description: >
+  This job creates a cloudfront invalidation for a distribution
+
+executor: default
+
+resource_class: small
+
+parameters:
+  distribution:
+    type: string
+    description: "CloudFront Distribution ID OR SSM Parameter to find it. SSM Parameter should begin with /"
+  invalidate_items:
+    type: string
+    description: "Space separated list of Items to invalidate. You can use any pattern acceptable to CloudFront."
+  slack_thread_id:
+    type: string
+    default: "thready"
+    description: "The Slack thread id for notifications."
+    
+steps:
+  - aws-cloudfront-invalidation:
+      distribution: << parameters.distribution >>
+      invalidate_items: << parameters.invalidate_items >>
+  - slack-notify:
+      event: fail
+      custom_message: "Failed :fire:"
+      slack_thread_id: << parameters.slack_thread_id >>
+  - slack-notify:
+      event: pass
+      custom_message: "Success :champagne:"
+      slack_thread_id: << parameters.slack_thread_id >>

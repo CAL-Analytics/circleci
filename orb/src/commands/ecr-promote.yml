@@ -1,0 +1,24 @@
+description: >
+  This command promotes an ecr container and a git repo to the next environment.
+
+parameters:
+  app_name:
+    type: string
+    description: "App name, which doubles as repository name. i.e. unfurly/api"
+  env_tag:
+    type: string
+    description: "Tag name of current env. i.e. dev_blue_rc"
+  next_env_tag:
+    type: string
+    description: "Comma separated list of tag names for next env. i.e. prod_blue_rc"
+
+steps:
+  - checkout
+  - set-up-unfurly-env
+  - run:
+      environment:
+        APP_NAME: << parameters.app_name >>
+        ENV_TAG: << parameters.env_tag >>
+        NEXT_ENV_TAG: << parameters.next_env_tag >>
+      name: ecr promote
+      command: ecr_promote.py

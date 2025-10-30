@@ -1,0 +1,21 @@
+description: >
+  Create a robots.txt file with "Disallow: /" inside
+
+parameters:
+  body:
+    type: string
+    default: "Disallow: /"
+    description: "Body of the file. Defaults to:  Disallow: /"
+  robots_path:
+    type: string
+    default: "dist"
+    description: "Default path to create the file"
+
+steps:
+  - set-up-unfurly-env
+  - run:
+      environment:
+        BODY: <<parameters.body>>
+        ROBOTS_PATH: <<parameters.robots_path>>
+      name: create robots.txt
+      command: create_robots_txt.py

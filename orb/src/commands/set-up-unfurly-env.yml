@@ -1,0 +1,87 @@
+description: >
+  This command sets up the environment. All of our scripts are python, and the `circlci orb pack` does not always play
+  well with them, formatting and indentation gets messed up. So we base64 encode the files before using include.
+  This command decodes the files and stores them in /tmp/ so they're ready to be called.
+
+parameters:
+  unfurly_path:
+    type: string
+    default: "/home/circleci/bin"
+    description: "path to place all unfurly pipeline scripts."
+
+steps:
+  - run:
+      environment:
+        UNFURLY_PATH: <<parameters.unfurly_path>>
+        BIN_TFWRAPPER: <<include(scripts/bin/tfwrapper.b64)>>
+        UTILS_AWS: <<include(scripts/utils/aws.py.b64)>>
+        UTILS_CDK: <<include(scripts/utils/cdk.py.b64)>>
+        UTILS_COMMON: <<include(scripts/utils/common.py.b64)>>
+        UTILS_DOCKER: <<include(scripts/utils/docker.py.b64)>>
+        UTILS_GIT: <<include(scripts/utils/git.py.b64)>>
+        UTILS_LOGGY: <<include(scripts/utils/loggy.py.b64)>>
+        UTILS_RELEASE: <<include(scripts/utils/release.py.b64)>>
+        UTILS_YARN: <<include(scripts/utils/yarn.py.b64)>>
+        UTILS_TERRAFORM: <<include(scripts/utils/terraform.py.b64)>>
+        AWS_CLOUDFRONT_INVALIDATION: <<include(scripts/aws_cloudfront_invalidation.py.b64)>>
+        AWS_LAMBDA_UPDATE_DOCKER: <<include(scripts/aws_lambda_update_docker.py.b64)>>
+        AWS_S3_CP: <<include(scripts/aws_s3_cp.py.b64)>>
+        AWS_S3_GET: <<include(scripts/aws_s3_get.py.b64)>>
+        AWS_S3_SYNC: <<include(scripts/aws_s3_sync.py.b64)>>
+        CDK_DEPLOY: <<include(scripts/cdk_deploy.py.b64)>>
+        CDK_DIFF: <<include(scripts/cdk_diff.py.b64)>>
+        TERRAFORM_PLAN: <<include(scripts/terraform_plan.py.b64)>>
+        TERRAFORM_APPLY: <<include(scripts/terraform_apply.py.b64)>>
+        CIRCLECI_GET_ARTIFACT: <<include(scripts/circleci_get_artifact.py.b64)>>
+        COLOR_CHECK: <<include(scripts/color_check.py.b64)>>
+        COLOR_FLIP: <<include(scripts/color_flip.py.b64)>>
+        CREATE_ROBOTS_TXT: <<include(scripts/create_robots_txt.py.b64)>>
+        DOCKER_BUILD: <<include(scripts/docker_build.py.b64)>>
+        ECR_PROMOTE: <<include(scripts/ecr_promote.py.b64)>>
+        GIT_CHANGES: <<include(scripts/git_changes.py.b64)>>
+        GIT_PROMOTE: <<include(scripts/git_promote.py.b64)>>
+        TRIGGER_PIPELINES: <<include(scripts/trigger_pipelines.py.b64)>>
+        YARN_BUILD: <<include(scripts/yarn_build.py.b64)>>
+      name: set up python environment
+      # shell: /bin/bash +x
+      command: |
+        if [ -e "$UNFURLY_PATH/aws.py" ]; then echo "unfurly/cicd already set up."; exit 0; fi
+        echo "Setting up unfurly/cicd in $UNFURLY_PATH"
+        if [ ! -e "$UNFURLY_PATH" ]; then mkdir $UNFURLY_PATH; fi
+        pip3 install subprocess_tee boto3 pyyaml poetry dnspython botocore[crt]
+        # Bin scripts
+        echo $BIN_TFWRAPPER | base64 -d >$UNFURLY_PATH/tfwrapper
+        # Utils
+        echo $UTILS_AWS | base64 -d >$UNFURLY_PATH/aws.py
+        echo $UTILS_CDK | base64 -d >$UNFURLY_PATH/cdk.py
+        echo $UTILS_COMMON | base64 -d >$UNFURLY_PATH/common.py
+        echo $UTILS_DOCKER | base64 -d >$UNFURLY_PATH/docker.py
+        echo $UTILS_GIT | base64 -d >$UNFURLY_PATH/git.py
+        echo $UTILS_LOGGY | base64 -d >$UNFURLY_PATH/loggy.py
+        echo $UTILS_RELEASE | base64 -d >$UNFURLY_PATH/release.py
+        echo $UTILS_YARN | base64 -d >$UNFURLY_PATH/yarn.py
+        echo $UTILS_TERRAFORM | base64 -d >$UNFURLY_PATH/terraform.py
+        # Pipeline scripts
+        echo $AWS_CLOUDFRONT_INVALIDATION | base64 -d >$UNFURLY_PATH/aws_cloudfront_invalidation.py
+        echo $AWS_LAMBDA_UPDATE_DOCKER | base64 -d >$UNFURLY_PATH/aws_lambda_update_docker.py
+        echo $AWS_S3_CP | base64 -d >$UNFURLY_PATH/aws_s3_cp.py
+        echo $AWS_S3_GET | base64 -d >$UNFURLY_PATH/aws_s3_get.py
+        echo $AWS_S3_SYNC | base64 -d >$UNFURLY_PATH/aws_s3_sync.py
+        echo $CDK_DEPLOY | base64 -d >$UNFURLY_PATH/cdk_deploy.py
+        echo $CDK_DIFF | base64 -d >$UNFURLY_PATH/cdk_diff.py
+        echo $TERRAFORM_PLAN | base64 -d >$UNFURLY_PATH/terraform_plan.py
+        echo $TERRAFORM_APPLY | base64 -d >$UNFURLY_PATH/terraform_apply.py
+        echo $CIRCLECI_GET_ARTIFACT | base64 -d >$UNFURLY_PATH/circleci_get_artifact.py
+        echo $COLOR_CHECK | base64 -d >$UNFURLY_PATH/color_check.py
+        echo $COLOR_FLIP | base64 -d >$UNFURLY_PATH/color_flip.py
+        echo $CREATE_ROBOTS_TXT | base64 -d >$UNFURLY_PATH/create_robots_txt.py
+        echo $DOCKER_BUILD | base64 -d >$UNFURLY_PATH/docker_build.py
+        echo $ECR_PROMOTE | base64 -d >$UNFURLY_PATH/ecr_promote.py
+        echo $GIT_CHANGES | base64 -d >$UNFURLY_PATH/git_changes.py
+        echo $GIT_PROMOTE | base64 -d >$UNFURLY_PATH/git_promote.py
+        echo $TRIGGER_PIPELINES | base64 -d >$UNFURLY_PATH/trigger_pipelines.py
+        echo $YARN_BUILD | base64 -d >$UNFURLY_PATH/yarn_build.py
+        chmod 755 $UNFURLY_PATH/*.py
+        # Set up git for promotions and things
+        git config --global user.email "circleci@unfur.ly"
+        git config --global user.name "CircleCI Pipeline"

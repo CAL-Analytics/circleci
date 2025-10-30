@@ -1,0 +1,28 @@
+description: >
+  This command performs a Terraform apply to an environment.
+
+parameters:
+  tf_env:
+    type: string
+    description: "This is the middle part of the properties file. i.e. dev, mgmt, pci.prod"
+  poetry_path:
+    type: string
+    default: ""
+    description: "Path to poetry toml/lock file. Defaults to None, meaning it lives in the cdk root."
+  poetry_install_cmd:
+    type: string
+    default: ""
+    description: "Poetry install command. Defaults to: poetry install"
+
+steps:
+  - checkout
+  - setup_remote_docker
+  - set-up-unfurly-env
+  - run:
+      environment:
+        TF_ENV: << parameters.tf_env >>
+        POETRY_PATH: << parameters.poetry_path >>
+        POETRY_INSTALL_CMD: << parameters.poetry_install_cmd >>
+      name: Terraform apply
+      # shell: /bin/xonsh -i
+      command: terraform_apply.py

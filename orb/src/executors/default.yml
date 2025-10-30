@@ -1,0 +1,10 @@
+description: >
+  Default cimg/aws image for interacting with aws
+docker:
+  - image: cimg/aws:<<parameters.tag>>
+parameters:
+  tag:
+    default: "2025.01"
+    description: >
+      Available tags can be found here: https://circleci.com/developer/images/image/cimg/aws
+    type: string

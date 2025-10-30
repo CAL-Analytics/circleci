@@ -1,0 +1,44 @@
+description: >
+  This command triggers a pipeline in the same project.
+
+executor: default
+
+resource_class: small
+
+parameters:
+  env_branch_name:
+    type: string
+    description: "Source branch name. i.e. develop"
+  trigger_pipelines:
+    type: string
+    description: "Comma separated list of pipeline(s) to trigger on promotion."
+  dont_trigger_pipelines:
+    type: string
+    default: ""
+    description: "(Optional) Comma separated list of pipeline(s) to force FALSE when triggering."
+  repo_slug:
+    type: string
+    default: ""
+    description: "(Optional) Repo Slug of pipeline to trigger. Defaults to current repo."
+  trigger_parameters:
+    type: string
+    default: ""
+    description: "(Optional) Parameter name and value to include to the triggered pipeline. Example: amis=ami-1234567890"
+  slack_thread_id:
+    type: string
+    default: "thready"
+    description: "The Slack thread id for notifications."
+    
+steps:
+  - trigger-pipelines:
+      env_branch_name: <<parameters.env_branch_name>>
+      trigger_pipelines: <<parameters.trigger_pipelines>>
+      dont_trigger_pipelines: <<parameters.dont_trigger_pipelines>>
+      repo_slug: <<parameters.repo_slug>>
+      trigger_parameters: <<parameters.trigger_parameters>>
+  - slack-notify:
+      event: fail
+      custom_message: "Failed :fire:"
+      slack_thread_id: << parameters.slack_thread_id >>
+
+

@@ -1,0 +1,35 @@
+description: >
+  AWS Helper command to update the docker container on a lambda function
+
+executor: default
+
+resource_class: small
+
+parameters:
+  function_arn:
+    type: string
+    description: "Function Arn or SSM Parameter to find it. SSM Parameter should begin with /"
+  app_name:
+    type: string
+    description: "This will be the app name as built / ecr repository name."
+  tag:
+    type: string
+    description: "The docker tag to deploy."
+  slack_thread_id:
+    type: string
+    default: "thready"
+    description: "The Slack thread id for notifications."
+
+steps:
+  - aws-lambda-update-docker:
+      function_arn: << parameters.function_arn >>
+      app_name: << parameters.app_name >>
+      tag: << parameters.tag >>
+  - slack-notify:
+      event: fail
+      custom_message: "Failed :fire:"
+      slack_thread_id: << parameters.slack_thread_id >>
+  - slack-notify:
+      event: pass
+      custom_message: "Success :champagne:"
+      slack_thread_id: << parameters.slack_thread_id >>

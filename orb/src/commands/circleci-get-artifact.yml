@@ -1,0 +1,22 @@
+description: >
+  This command grabs an artifact from a circleci build pipeline using a known URL. A future update could smartly grab the URL for you based on pipeline job / build_num.
+  Note: For jobs not using parallelism, the CIRCLE_NODE_INDEX value would always be 0.
+
+parameters:
+  url:
+    type: string
+    description: "Full URL to the build artifact. This should be in the format: https://output.circle-artifacts.com/output/job/CIRLCE_WORKFLOW_JOB_ID/artifacts/CIRCLECI_NODE_INDEX/FILENAME"
+  output_file:
+    type: string
+    default: ""
+    description: "(Optional) Output file path. Will default to workspace/FILENAME"
+
+steps:
+  - set-up-unfurly-env
+  - run:
+      environment:
+        URL: << parameters.url >>
+        OUTPUT_FILE: << parameters.output_file >>
+      name: CircleCI Get Artifact
+      # shell: /bin/xonsh -i
+      command: circleci_get_artifact.py

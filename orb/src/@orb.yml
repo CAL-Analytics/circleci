@@ -1,0 +1,12 @@
+version: 2.1
+
+description: >
+  Cal Analytics Orb. full aws and terraform cicd package.
+
+display:
+  home_url: "https://calanalytics.com/cicd"
+  source_url: "https://bitbucket.org/calanalytics/cicd"
+
+orbs:
+  trigger-pipeline: trustedshops-public/trigger-pipeline@2.0.0
+  slack: circleci/slack@5.1.1

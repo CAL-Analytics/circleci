@@ -1,0 +1,71 @@
+description: >
+  This command runs a slack notify command
+
+parameters:
+  event:
+    type: enum
+    default: "always"
+    enum: ["fail", "pass", "always"]
+    description: "Event type: fail, pass, or always. Defaults to: always"
+  slack_thread_id:
+    type: string
+    default: "thready"
+    description: "thread id to keep messages theaded for a pipeline. Using workflow name is nice. Defaults to: thready"
+  custom_message: 
+    type: string
+    default: "Started :batmanrunning:"
+    description: "Custom message. Defaults to: Started"
+    
+steps:
+  - slack/notify:
+      custom: |
+        {
+          "text": "CircleCI job",
+          "blocks": [
+            {
+              "type": "header",
+              "text": {
+                "type": "plain_text",
+                "text": "<<parameters.custom_message>>",
+                "emoji": true
+              }
+            },
+            {
+              "type": "section",
+              "fields": [
+                {
+                  "type": "mrkdwn",
+                  "text": "*Project*: $CIRCLE_PROJECT_REPONAME"
+                },
+                {
+                  "type": "mrkdwn",
+                  "text": "*Branch*: $CIRCLE_BRANCH"
+                },
+                {
+                  "type": "mrkdwn",
+                  "text": "*Workflow*: <<parameters.slack_thread_id>>"
+                },
+                {
+                  "type": "mrkdwn",
+                  "text": "*Author*: $CIRCLE_USERNAME"
+                }
+              ]
+            },
+            {
+              "type": "actions",
+              "elements": [
+                {
+                  "type": "button",
+                  "action_id": "basic_on_hold_view",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "View Workflow"
+                  },
+                  "url": "${SLACK_PARAM_CIRCLECI_HOST}/workflow-run/${CIRCLE_WORKFLOW_ID}"
+                }
+              ]
+            }
+          ]
+        }
+      event: <<parameters.event>>
+      thread_id: <<parameters.slack_thread_id>>  

@@ -1,0 +1,29 @@
+description: >
+  Helper for slack notify to force a custom message without taking tons of space in the main pipeline config file.
+
+executor: default
+
+resource_class: small
+
+parameters:
+  event:
+    type: enum
+    default: "always"
+    enum: ["fail", "pass", "always"]
+    description: "Event type: fail, pass, or always. Defaults to: always"
+  slack_thread_id:
+    type: string
+    default: "thready"
+    description: "thread id to keep messages theaded for a pipeline. Using workflow name is nice. Defaults to: thready"
+  custom_message: 
+    type: string
+    default: "Started :batmanrunning:"
+    description: "Custom message. Defaults to: Started"
+
+steps:
+
+  - slack-notify:
+      event: <<parameters.event>>
+      custom_message: <<parameters.custom_message>>
+      slack_thread_id: <<parameters.slack_thread_id>>
+

@@ -1,0 +1,73 @@
+description: >
+  This job promotes an ecr container and a git repo to the next environment.
+
+executor: default
+
+resource_class: small
+
+parameters:
+  app_name:
+    type: string
+    description: "App name, which doubles as repository name. i.e. unfurly/api"
+  env_tag:
+    type: string
+    description: "Tag name of current env. i.e. dev_blue_rc"
+  next_env_tag:
+    type: string
+    description: "Comma separated list of tag names for next env. i.e. prod_blue_rc"
+  env_branch_name:
+    type: string
+    default: ""
+    description: "(Optional) Fill in to git promote. Source branch name. i.e. develop"
+  next_env_branch_name:
+    type: string
+    default: ""
+    description: "(Optional) Fill in to git promote. Destination branch name. i.e. uat"
+  trigger_pipelines:
+    type: string
+    default: ""
+    description: "(Optional) Comma separated list of pipeline(s) to trigger on promotion."
+  dont_trigger_pipelines:
+    type: string
+    default: ""
+    description: "(Optional) Comma separated list of pipeline(s) to NOT trigger on promotion."
+  repo_slug:
+    type: string
+    default: ""
+    description: "(Optional) Repo Slug of pipeline to trigger. Defaults to current repo."
+  trigger_parameters:
+    type: string
+    default: ""
+    description: "(Optional) Parameter name and value to include to the triggered pipeline. Example: amis=ami-1234567890"
+  slack_thread_id:
+    type: string
+    default: "thready"
+    description: "The Slack thread id for notifications."
+    
+steps:
+  - ecr-promote:
+      app_name: << parameters.app_name >>
+      env_tag: << parameters.env_tag >>
+      next_env_tag: << parameters.next_env_tag >>
+  - when:
+      condition:
+        and: [ <<parameters.env_branch_name>>, <<parameters.next_env_branch_name>> ]
+      steps:
+        - git-promote:
+            env_branch_name: << parameters.env_branch_name >>
+            next_env_branch_name: << parameters.next_env_branch_name >>
+  - when:
+      condition: << parameters.trigger_pipelines >>
+      steps:
+        - trigger-pipelines:
+            env_branch_name: << parameters.next_env_branch_name >>
+            trigger_pipelines: << parameters.trigger_pipelines >>
+            dont_trigger_pipelines: << parameters.dont_trigger_pipelines >>
+            repo_slug: << parameters.repo_slug >>
+            trigger_parameters: << parameters.trigger_parameters >>
+  - slack-notify:
+      event: fail
+      custom_message: "Failed :fire:"
+      slack_thread_id: << parameters.slack_thread_id >>
+
+

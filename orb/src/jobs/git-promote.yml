@@ -1,0 +1,55 @@
+description: >
+  This job promotes a git repo from one branch to another, using a pipeline created version
+  in the format YYYY.MM.DD.BUILD_NUM.COMMIT_HASH for the comment
+
+executor: default
+
+resource_class: small
+
+parameters:
+  env_branch_name:
+    type: string
+    description: "Source branch name. i.e. develop"
+  next_env_branch_name:
+    type: string
+    description: "Destination branch name. i.e. uat"
+  trigger_pipelines:
+    type: string
+    default: ""
+    description: "(Optional) Comma separated list of pipeline(s) to trigger on promotion."
+  dont_trigger_pipelines:
+    type: string
+    default: ""
+    description: "(Optional) Comma separated list of pipeline(s) to NOT trigger on promotion."
+  repo_slug:
+    type: string
+    default: ""
+    description: "(Optional) Repo Slug of pipeline to trigger. Defaults to current repo."
+  trigger_parameters:
+    type: string
+    default: ""
+    description: "(Optional) Parameter name and value to include to the triggered pipeline. Example: amis=ami-1234567890"
+  slack_thread_id:
+    type: string
+    default: "thready"
+    description: "The Slack thread id for notifications."
+    
+steps:
+  - git-promote:
+      env_branch_name: << parameters.env_branch_name >>
+      next_env_branch_name: << parameters.next_env_branch_name >>
+  - when:
+      condition: << parameters.trigger_pipelines >>
+      steps:
+        - trigger-pipelines:
+            env_branch_name: << parameters.next_env_branch_name >>
+            trigger_pipelines: << parameters.trigger_pipelines >>
+            dont_trigger_pipelines: << parameters.dont_trigger_pipelines >>
+            repo_slug: << parameters.repo_slug >>
+            trigger_parameters: << parameters.trigger_parameters >>
+  - slack-notify:
+      event: fail
+      custom_message: "Failed :fire:"
+      slack_thread_id: << parameters.slack_thread_id >>
+
+

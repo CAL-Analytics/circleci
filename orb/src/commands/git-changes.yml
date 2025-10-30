@@ -1,0 +1,21 @@
+description: >
+  This command checks for files changed matching to a regex provided as an input parameter.
+
+parameters:
+  trigger_files:
+    type: string
+    default: ""
+    description: "Regex path for changes. Wrap in quotes and use a space as delimeter to add multiple paths or files. Examples: ^cdk/.* or app/file.xml or some/file/hello.*.yml"
+  no_cancel:
+    type: string
+    default: ""
+    description: "(Optional) If this is set it wont cancel the pipeline, the job still fails to prevent requires jobs from running."
+
+steps:
+  - set-up-unfurly-env
+  - run:
+      environment:
+        TRIGGER_FILES: <<parameters.trigger_files>>
+        NO_CANCEL: <<parameters.no_cancel>>
+      name: git check for file changes
+      command: git_changes.py 

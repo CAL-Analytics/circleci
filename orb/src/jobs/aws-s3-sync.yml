@@ -1,0 +1,66 @@
+description: >
+  AWS Helper command to sync files into an S3 bucket.
+
+executor: default
+
+resource_class: small
+
+parameters:
+  s3_bucket:
+    type: string
+    description: "s3 bucket name or SSM Parameter to find it. SSM Parameter should begin with /"
+  s3_path:
+    type: string
+    description: "S3 Key path to sync local files into."
+  sync_files:
+    type: string
+    description: "Local file or folder to sync into aws an s3 bucket."
+  no_delete:
+    type: string
+    default: ""
+    description: "If set, sync but don't delete files that aren't in source. Default to unset for a true sync."
+  s3_metadata:
+    type: string
+    default: ""
+    description: "Metadata to add to each file. i.e. key1=value1,key2=value2"
+  s3_metadata_directive:
+    type: string
+    default: ""
+    description: "Metadata Directive (ONLY used if metadata is set). Defaults to REPLACE. Can be COPY or REPLACE."
+  s3_cache_control:
+    type: string
+    default: ""
+    description: "Cache control to add to the files. i.e. max-age=86400"
+  trigger_files:
+    type: string
+    default: ""
+    description: "(Optional). Regex path for changes. Wrap in quotes and use a space as delimeter to add multiple paths or files. Examples: ^cdk/.* or app/file.xml or some/file/hello.*.yml"
+  slack_thread_id:
+    type: string
+    default: "thready"
+    description: "The Slack thread id for notifications."
+    
+steps:
+  - checkout
+  - when:
+      condition: << parameters.trigger_files >>
+      steps:
+        - git-changes:
+            trigger_files: << parameters.trigger_files >>
+  - aws-s3-sync:
+      s3_bucket: << parameters.s3_bucket >>
+      s3_path: << parameters.s3_path >>
+      sync_files: << parameters.sync_files >>
+      no_delete: << parameters.no_delete >>
+      s3_metadata: << parameters.s3_metadata >>
+      s3_metadata_directive: << parameters.s3_metadata_directive >>
+      s3_cache_control: << parameters.s3_cache_control >>
+  - slack-notify:
+      event: fail
+      custom_message: "Failed :fire:"
+      slack_thread_id: << parameters.slack_thread_id >>
+  - slack-notify:
+      event: pass
+      custom_message: "Success :champagne:"
+      slack_thread_id: << parameters.slack_thread_id >>
+

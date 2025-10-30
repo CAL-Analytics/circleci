@@ -1,0 +1,93 @@
+description: >
+  This job builds and deploys a static site using yarn build and aws s3 sync
+
+executor: default
+
+resource_class: small
+
+parameters:
+  build_path:
+    type: string
+    default: ""
+    description: "Path in repo to build. Defaults to root of repo."
+  dist_path:
+    type: string
+    default: ""
+    description: "Path in repo of built distro to sync. Defaults to dist"
+  s3_bucket_name:
+    type: string
+    description: "S3 bucket name OR SSM Parameter to find it. SSM Parameter should begin with /"
+  s3_bucket_path:
+    type: string
+    description: "S3 bucket path to sync into."
+  version_file:
+    type: string
+    default: ""
+    description: "Add build artifact versioning so we can easily see it live. Defaults to version."
+  distribution:
+    type: string
+    description: "CloudFront Distribution ID OR SSM Parameter to find it. SSM Parameter should begin with /"
+  invalidate_items:
+    type: string
+    default: ""
+    description: "Space separated list of Items to invalidate. You can use any pattern acceptable to CloudFront."
+  no_delete:
+    type: string
+    default: ""
+    description: "If set, sync but don't delete files that aren't in source. Default to unset for a true sync."
+  s3_metadata:
+    type: string
+    default: ""
+    description: "Metadata to add to each file. i.e. key1=value1,key2=value2"
+  s3_metadata_directive:
+    type: string
+    default: ""
+    description: "Metadata Directive (ONLY used if metadata is set). Defaults to REPLACE. Can be COPY or REPLACE."
+  s3_cache_control:
+    type: string
+    default: ""
+    description: "Cache control to add to the files. i.e. max-age=86400"
+  spa_index:
+    type: string
+    default: ""
+    description: "SPA index filename to set cache-control to 0."
+  slack_thread_id:
+    type: string
+    default: "thready"
+    description: "The Slack thread id for notifications."
+    
+steps:
+  - checkout
+  - build-and-deploy-static-site:
+      build_path: << parameters.build_path >>
+      dist_path: << parameters.dist_path >>
+      version_file: << parameters.version_file >>
+  - aws-s3-sync:
+      s3_bucket: <<parameters.s3_bucket_name>>
+      s3_path: <<parameters.s3_bucket_path>>
+      sync_files: <<parameters.dist_path>>
+      no_delete: <<parameters.no_delete>>
+      s3_metadata: <<parameters.s3_metadata>>
+      s3_metadata_directive: <<parameters.s3_metadata_directive>>
+      s3_cache_control: <<parameters.s3_cache_control>>
+  - when:
+      condition: << parameters.spa_index >>
+      steps:
+        - aws-s3-cp:
+            s3_bucket: <<parameters.s3_bucket_name>>
+            s3_path: <<parameters.s3_bucket_path>>/
+            sync_files: <<parameters.spa_index>>
+            s3_metadata: <<parameters.s3_metadata>>
+            s3_metadata_directive: <<parameters.s3_metadata_directive>>
+            s3_cache_control: max-age=0
+  - aws-cloudfront-invalidation:
+      distribution: <<parameters.distribution>>
+      invalidate_items: <<parameters.invalidate_items>>
+  - slack-notify:
+      event: fail
+      custom_message: "Failed :fire:"
+      slack_thread_id: << parameters.slack_thread_id >>
+  - slack-notify:
+      event: pass
+      custom_message: "Success :champagne:"
+      slack_thread_id: << parameters.slack_thread_id >>

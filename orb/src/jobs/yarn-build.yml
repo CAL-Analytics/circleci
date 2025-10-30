@@ -1,0 +1,80 @@
+description: >
+  This job builds and a static site using yarn build and pushes the artifact to an artifacts s3 bucket
+
+executor: default
+
+resource_class: << parameters.resource_class >>
+
+parameters:
+  resource_class:
+    type: string
+    default: arm.medium
+    description: "Resource class to use for build. small is default for dev_amd64_rc and arm.medium is default for dev_arm64_rc"
+  app_name:
+    type: string
+    description: "Application name."
+  build_path:
+    type: string
+    default: ""
+    description: "Path in repo to build. Defaults to root of repo."
+  dist_path:
+    type: string
+    default: ""
+    description: "Path in repo of built distro to sync. Defaults to dist"
+  version_file:
+    type: string
+    default: ""
+    description: "Add build artifact versioning so we can easily see it live. Defaults to version."
+  trigger_files:
+    type: string
+    default: ""
+    description: "(Optional). Regex path for changes. Wrap in quotes and use a space as delimeter to add multiple paths or files. Examples: ^cdk/.* or app/file.xml or some/file/hello.*.yml"
+  trigger_pipelines:
+    type: string
+    default: ""
+    description: "(Optional) Comma separated list of pipeline(s) to trigger on promotion."
+  dont_trigger_pipelines:
+    type: string
+    default: ""
+    description: "(Optional) Comma separated list of pipeline(s) to NOT trigger on promotion."
+  repo_slug:
+    type: string
+    default: ""
+    description: "(Optional) Repo Slug of pipeline to trigger. Defaults to current repo."
+  env_branch_name:
+    type: string
+    default: ""
+    description: "(Optional) Source branch name of pipeline to trigger. Default to current branch."
+  trigger_parameters:
+    type: string
+    default: ""
+    description: "(Optional) Parameter name and value to include to the triggered pipeline. Example: amis=ami-1234567890"
+  slack_thread_id:
+    type: string
+    default: "thready"
+    description: "The Slack thread id for notifications."
+    
+steps:
+  - checkout
+  - yarn-build:
+      app_name: << parameters.app_name >>
+      build_path: << parameters.build_path >>
+      dist_path: << parameters.dist_path >>
+      version_file: << parameters.version_file >>
+  - when:
+      condition: << parameters.trigger_pipelines >>
+      steps:
+        - trigger-pipelines:
+            env_branch_name: << parameters.env_branch_name >>
+            trigger_pipelines: << parameters.trigger_pipelines >>
+            dont_trigger_pipelines: << parameters.dont_trigger_pipelines >>
+            repo_slug: << parameters.repo_slug >>
+            trigger_parameters: << parameters.trigger_parameters >>
+  - slack-notify:
+      event: fail
+      custom_message: "Failed :fire:"
+      slack_thread_id: << parameters.slack_thread_id >>
+  - slack-notify:
+      event: pass
+      custom_message: "Success :champagne:"
+      slack_thread_id: << parameters.slack_thread_id >>

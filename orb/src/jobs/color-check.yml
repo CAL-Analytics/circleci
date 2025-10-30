@@ -1,0 +1,33 @@
+description: >
+  This job checks the inactive color against the color being deployed and cancels the pipeline if
+  it is the LIVE color.
+
+executor: default
+
+resource_class: small
+
+parameters:
+  color:
+    type: string
+    default: ""
+    description: "Color to check as inactive"
+  record_name:
+    type: string
+    default: ""
+    description: "DNS record_name (FQDN) to locate routing information"
+  kvs_arn:
+    type: string
+    default: ""
+    description: "KVS ARN to locate routing information"
+  kvs_key:
+    type: string
+    default: ""
+    description: "KVS Key to locate routing information"
+
+steps:
+  - checkout
+  - color-check:
+      color: << parameters.color >>
+      record_name: << parameters.record_name >>
+      kvs_arn: << parameters.kvs_arn >>
+      kvs_key: << parameters.kvs_key >>

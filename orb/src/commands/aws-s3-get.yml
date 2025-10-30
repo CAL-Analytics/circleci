@@ -1,0 +1,34 @@
+description: >
+  AWS Helper command to get files from an S3 bucket.
+
+parameters:
+  s3_bucket:
+    type: string
+    default: ""
+    description: "s3 bucket name or SSM Parameter to find it. SSM Parameter should begin with /. If empty, will use ARTIFACTS_BUCKET set in global context"
+  s3_path:
+    type: string
+    description: "S3 Key path of file to get."
+  file_name:
+    type: string
+    default: ""
+    description: "Local file or folder save file into. if blank, use filename from s3_path."
+  extracted_root:
+    type: string
+    default: ""
+    description: "Should the s3 get process extract the contents? If so, what is the root path you want it? i.e. artifacts/ or dist/"
+  trigger_files:
+    type: string
+    default: ""
+    description: "(Optional). Regex path for changes. Wrap in quotes and use a space as delimeter to add multiple paths or files. Examples: ^cdk/.* or app/file.xml or some/file/hello.*.yml"
+
+steps:
+  - set-up-unfurly-env
+  - run:
+      environment:
+        S3_BUCKET: <<parameters.s3_bucket>>
+        S3_PATH: <<parameters.s3_path>>
+        FILE_NAME: <<parameters.file_name>>
+        EXTRACTED_ROOT: <<parameters.extracted_root>>
+      name: s3 get
+      command: aws_s3_get.py

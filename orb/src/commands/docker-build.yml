@@ -1,0 +1,41 @@
+description: >
+  This command runs a docker build.
+
+parameters:
+  app_name:
+    type: string
+    description: "Application name as defined in CDK stack properties file."
+  env_name:
+    type: string
+    default: "dev"
+    description: "Environment name to deploy. We use this as part of our container Tag. If this is part of a CDK deployed app, make this the same as your properties.ENVNAME.json"
+  dockerfile_path:
+    type: string
+    default: ""
+    description: "Path to dockerfile from root of repo. Defaults to root of checked out repo."
+  dockerfile_name:
+    type: string
+    default: "Dockerfile"
+    description: "Docker file name. Defaults to Dockerfile."
+  docker_platform:
+    type: string
+    default: ""
+    description: "Platform of container. Defaults to executor_tag's platform."
+  docker_build_args:
+    type: string
+    default: ""
+    description: "(Optional). Comma separated list of build args to inject into the docker build. Example: PLUM_VERSION=6.0.0,BUILD_VERSION=24.05.07.33.3abcde"
+
+steps:
+  - set-up-unfurly-env
+  - run:
+      environment:
+        APP_NAME: << parameters.app_name >>
+        ENV_NAME: << parameters.env_name >>
+        DOCKERFILE_PATH: << parameters.dockerfile_path >>
+        DOCKERFILE_NAME: << parameters.dockerfile_name >>
+        DOCKER_PLATFORM: << parameters.docker_platform >>
+        DOCKER_BUILD_ARGS: << parameters.docker_build_args >>
+      name: Docker Build
+      # shell: /bin/bash
+      command: docker_build.py

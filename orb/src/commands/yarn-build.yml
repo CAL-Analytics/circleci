@@ -1,0 +1,30 @@
+description: >
+  This command builds static site using yarn build and pushes to an artifacts s3 bucket.
+
+parameters:
+  app_name:
+    type: string
+    description: "Application name."
+  build_path:
+    type: string
+    default: ""
+    description: "Path in repo to build. Defaults to root of repo."
+  dist_path:
+    type: string
+    default: ""
+    description: "Path in repo of built distro to sync. Defaults to /distro"
+  version_file:
+    type: string
+    default: "/version"
+    description: "Add build artifact versioning so we can easily see it live. Defaults to /version."
+
+steps:
+  - set-up-unfurly-env
+  - run:
+      environment:
+        APP_NAME: <<parameters.app_name>>
+        BUILD_PATH: <<parameters.build_path>>
+        DIST_PATH: <<parameters.dist_path>>
+        VERSION_FILE: <<parameters.version_file>>
+      name: yarn build
+      command: yarn_build.py 

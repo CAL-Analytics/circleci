@@ -1,0 +1,102 @@
+description: >
+  This job runs a docker build.
+
+executor: 
+  name: default
+  # tag: << parameters.executor_tag >>
+
+resource_class: << parameters.resource_class >>
+
+parameters:
+  # executor_tag:
+  #   type: string
+  #   default: "2024.03"
+  #   description: "Container arch to build. Using cimg/aws by default now. resource class can be set to define arch"
+  resource_class:
+    type: string
+    default: arm.medium
+    description: "Resource class to use for build. small is default for dev_amd64_rc and arm.medium is default for dev_arm64_rc"
+  app_name:
+    type: string
+    description: "Application name as defined in CDK stack properties file."
+  env_name:
+    type: string
+    default: "dev"
+    description: "Environment name to deploy. We use this as part of our container Tag."
+  dockerfile_path:
+    type: string
+    default: ""
+    description: "Path to dockerfile from root of repo. Defaults to root of checked out repo."
+  dockerfile_name:
+    type: string
+    default: "Dockerfile"
+    description: "Docker file name. Defaults to Dockerfile."
+  docker_platform:
+    type: string
+    default: ""
+    description: "Platform of container. Defaults to pipeline platform."
+  docker_build_args:
+    type: string
+    default: ""
+    description: "(Optional). Comma separated list of build args to inject into the docker build. Example: PLUM_VERSION=6.0.0,BUILD_VERSION=24.05.07.33.3abcde"
+  trigger_files:
+    type: string
+    default: ""
+    description: "(Optional). Regex path for changes. Wrap in quotes and use a space as delimeter to add multiple paths or files. Examples: ^cdk/.* or app/file.xml or some/file/hello.*.yml"
+  trigger_pipelines:
+    type: string
+    default: ""
+    description: "(Optional) Comma separated list of pipeline(s) to trigger on promotion."
+  dont_trigger_pipelines:
+    type: string
+    default: ""
+    description: "(Optional) Comma separated list of pipeline(s) to NOT trigger on promotion."
+  repo_slug:
+    type: string
+    default: ""
+    description: "(Optional) Repo Slug of pipeline to trigger. Defaults to current repo."
+  env_branch_name:
+    type: string
+    default: ""
+    description: "(Optional) Source branch name of pipeline to trigger. Default to current branch."
+  trigger_parameters:
+    type: string
+    default: ""
+    description: "(Optional) Parameter name and value to include to the triggered pipeline. Example: amis=ami-1234567890"
+  slack_thread_id:
+    type: string
+    default: "thready"
+    description: "The Slack thread id for notifications."
+    
+steps:
+  - checkout
+  - when:
+      condition: << parameters.trigger_files >>
+      steps:
+        - git-changes:
+            trigger_files: << parameters.trigger_files >>
+  - setup_remote_docker
+  - docker-build:
+      app_name: << parameters.app_name >>
+      env_name: << parameters.env_name >>
+      dockerfile_path: << parameters.dockerfile_path >>
+      dockerfile_name: << parameters.dockerfile_name >>
+      docker_platform: << parameters.docker_platform >>
+      docker_build_args: << parameters.docker_build_args >>
+  - when:
+      condition: << parameters.trigger_pipelines >>
+      steps:
+        - trigger-pipelines:
+            env_branch_name: << parameters.env_branch_name >>
+            trigger_pipelines: << parameters.trigger_pipelines >>
+            dont_trigger_pipelines: << parameters.dont_trigger_pipelines >>
+            repo_slug: << parameters.repo_slug >>
+            trigger_parameters: << parameters.trigger_parameters >>
+  - slack-notify:
+      event: fail
+      custom_message: "Failed :fire:"
+      slack_thread_id: << parameters.slack_thread_id >>
+  - slack-notify:
+      event: pass
+      custom_message: "Success :champagne:"
+      slack_thread_id: << parameters.slack_thread_id >>

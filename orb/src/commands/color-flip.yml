@@ -1,0 +1,31 @@
+description: >
+  This command flips a color to LIVE.
+
+parameters:
+  color:
+    type: string
+    default: ""
+    description: "Color to flip to LIVE"
+  record_name:
+    type: string
+    default: ""
+    description: "DNS record_name (FQDN) to locate routing information"
+  kvs_arn:
+    type: string
+    default: ""
+    description: "KVS ARN to locate routing information"
+  kvs_key:
+    type: string
+    default: ""
+    description: "KVS Key to locate routing information"
+
+steps:
+  - set-up-unfurly-env
+  - run:
+      environment:
+        COLOR: <<parameters.color>>
+        RECORD_NAME: <<parameters.record_name>>
+        KVS_ARN: <<parameters.kvs_arn>>
+        KVS_KEY: <<parameters.kvs_key>>
+      name: color flip
+      command: color_flip.py 

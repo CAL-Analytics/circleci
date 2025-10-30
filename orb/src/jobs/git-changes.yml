@@ -1,0 +1,23 @@
+description: >
+  This job checks for file changes in a git commit. By default it will cancel the pipeline
+  if no changes are found. Set no_cancel option to continue with the pipeline.
+
+executor: default
+
+resource_class: small
+
+parameters:
+  trigger_files:
+    type: string
+    default: ""
+    description: "Regex path for changes. Wrap in quotes and use a space as delimeter to add multiple paths or files. Examples: ^cdk/.* or app/file.xml or some/file/hello.*.yml"
+  no_cancel:
+    type: string
+    default: ""
+    description: "(Optional) If this is set it wont cancel the pipeline, the job still fails to prevent requires jobs from running."
+
+steps:
+  - checkout
+  - git-changes:
+      trigger_files: << parameters.trigger_files >>
+      no_cancel: << parameters.no_cancel >>

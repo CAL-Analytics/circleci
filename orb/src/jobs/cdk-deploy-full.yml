@@ -1,0 +1,59 @@
+description: >
+  This job performs a CDK diff and deploy, outputing a pretty diff html file as a viewable artifact.
+  It can also check to ensure only a specific set of files were changed before continuing with the pipeline.
+
+executor: default
+
+resource_class: small
+
+parameters:
+  cdk_env:
+    type: string
+    description: "This is the middle part of the properties file. i.e. dev, mgmt, pci.prod"
+  cdk_lang:
+    type: string
+    default: python
+    description: "What is the CDK language? defaults to python. typescript is the only other option for now."
+  poetry_path:
+    type: string
+    default: ""
+    description: "Path to poetry toml/lock file. Defaults to None, meaning it lives in the cdk root."
+  poetry_install_cmd:
+    type: string
+    default: ""
+    description: "Poetry install command. Defaults to: poetry install"
+  trigger_files:
+    type: string
+    default: ""
+    description: "(Optional). Regex path for changes. Wrap in quotes and use a space as delimeter to add multiple paths or files. Examples: ^cdk/.* or app/file.xml or some/file/hello.*.yml"
+  slack_thread_id:
+    type: string
+    default: "thready"
+    description: "The Slack thread id for notifications."
+    
+steps:
+  - checkout
+  - when:
+      condition: << parameters.trigger_files >>
+      steps:
+        - git-changes:
+            trigger_files: << parameters.trigger_files >>
+  - cdk-diff:
+      cdk_env: << parameters.cdk_env >>
+      cdk_lang: << parameters.cdk_lang >>
+      poetry_path: << parameters.poetry_path >>
+      poetry_install_cmd: << parameters.poetry_install_cmd >>
+  - cdk-deploy:
+      cdk_env: << parameters.cdk_env >>
+      cdk_lang: << parameters.cdk_lang >>
+      poetry_path: << parameters.poetry_path >>
+      poetry_install_cmd: << parameters.poetry_install_cmd >>
+  - slack-notify:
+      event: fail
+      custom_message: "Failed :fire:"
+      slack_thread_id: << parameters.slack_thread_id >>
+  - slack-notify:
+      event: pass
+      custom_message: "Success :champagne:"
+      slack_thread_id: << parameters.slack_thread_id >>
+

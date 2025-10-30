@@ -1,0 +1,22 @@
+description: >
+  This command promotes a git repo from one branch to another, using a pipeline created version
+  in the format YYYY.MM.DD.BUILD_NUM.COMMIT_HASH
+
+parameters:
+  env_branch_name:
+    type: string
+    description: "Source branch name. i.e. develop"
+  next_env_branch_name:
+    type: string
+    description: "Destination branch name. i.e. uat"
+
+steps:
+  - checkout
+  - set-up-unfurly-env
+  - run:
+      environment:
+        ENV_BRANCH_NAME: << parameters.env_branch_name >>
+        NEXT_ENV_BRANCH_NAME: << parameters.next_env_branch_name >>
+      name: git promote
+      # shell: /bin/xonsh -i
+      command: git_promote.py

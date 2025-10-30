@@ -1,0 +1,43 @@
+description: >
+  AWS Helper command to sync files into an S3 bucket.
+
+parameters:
+  s3_bucket:
+    type: string
+    description: "s3 bucket name or SSM Parameter to find it. SSM Parameter should begin with /"
+  s3_path:
+    type: string
+    description: "S3 Key path to sync local files into."
+  sync_files:
+    type: string
+    description: "Local file or folder to sync into aws an s3 bucket."
+  no_delete:
+    type: string
+    default: ""
+    description: "If set, sync but don't delete files that aren't in source. Default to unset for a true sync."
+  s3_metadata:
+    type: string
+    default: ""
+    description: "Metadata to add to each file. i.e. key1=value1,key2=value2"
+  s3_metadata_directive:
+    type: string
+    default: ""
+    description: "Metadata Directive (ONLY used if metadata is set). Defaults to REPLACE. Can be COPY or REPLACE."
+  s3_cache_control:
+    type: string
+    default: ""
+    description: "Cache control to add to the files. i.e. max-age=86400"
+
+steps:
+  - set-up-unfurly-env
+  - run:
+      environment:
+        S3_BUCKET: <<parameters.s3_bucket>>
+        S3_PATH: <<parameters.s3_path>>
+        SYNC_FILES: <<parameters.sync_files>>
+        NO_DELETE: <<parameters.no_delete>>
+        S3_METADATA: <<parameters.s3_metadata>>
+        S3_METADATA_DIRECTIVE: <<parameters.s3_metadata_directive>>
+        S3_CACHE_CONTROL: <<parameters.s3_cache_control>>
+      name: s3 sync
+      command: aws_s3_sync.py

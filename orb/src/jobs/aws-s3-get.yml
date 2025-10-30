@@ -1,0 +1,53 @@
+description: >
+  AWS Helper command to get a file from an S3 bucket.
+
+executor: default
+
+resource_class: small
+
+parameters:
+  s3_bucket:
+    type: string
+    default: ""
+    description: "s3 bucket name or SSM Parameter to find it. SSM Parameter should begin with /. If empty, will use ARTIFACTS_BUCKET set in global context"
+  s3_path:
+    type: string
+    description: "S3 Key path of file to get."
+  file_name:
+    type: string
+    default: ""
+    description: "Local file or folder to save file into. if blank, use filename from s3_path."
+  extracted_root:
+    type: string
+    default: ""
+    description: "Should the s3 get process extract the contents? If so, what is the root path you want it? i.e. artifacts/ or dist/"
+  trigger_files:
+    type: string
+    default: ""
+    description: "(Optional). Regex path for changes. Wrap in quotes and use a space as delimeter to add multiple paths or files. Examples: ^cdk/.* or app/file.xml or some/file/hello.*.yml"
+  slack_thread_id:
+    type: string
+    default: "thready"
+    description: "The Slack thread id for notifications."
+    
+steps:
+  - checkout
+  - when:
+      condition: << parameters.trigger_files >>
+      steps:
+        - git-changes:
+            trigger_files: << parameters.trigger_files >>
+  - aws-s3-get:
+      s3_bucket: << parameters.s3_bucket >>
+      s3_path: << parameters.s3_path >>
+      file_name: << parameters.file_name >>
+      extracted_root: << parameters.extracted_root >>
+  - slack-notify:
+      event: fail
+      custom_message: "Failed :fire:"
+      slack_thread_id: << parameters.slack_thread_id >>
+  - slack-notify:
+      event: pass
+      custom_message: "Success :champagne:"
+      slack_thread_id: << parameters.slack_thread_id >>
+

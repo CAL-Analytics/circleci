@@ -1,0 +1,41 @@
+description: >
+  This command triggers one or more pipelines. 
+
+parameters:
+  env_branch_name:
+    type: string
+    default: ""
+    description: "Source branch name of pipeline to trigger. Default to current branch."
+  trigger_pipelines:
+    type: string
+    description: "Comma separated list of pipeline(s) to trigger on promotion."
+  dont_trigger_pipelines:
+    type: string
+    default: ""
+    description: "(Optional) Comma separated list of pipeline(s) to force FALSE when triggering."
+  repo_slug:
+    type: string
+    default: ""
+    description: "(Optional) Repo Slug of pipeline to trigger. Defaults to current repo."
+  trigger_parameters:
+    type: string
+    default: ""
+    description: "(Optional) Semi-Colon (;) separated list of Parameter names and values to include to the triggered pipeline. Example: amis=ami-1234567890;hero=thor"
+
+steps:
+  - checkout
+  - set-up-unfurly-env
+  - run:
+      environment:
+        ENV_BRANCH_NAME: << parameters.env_branch_name >>
+        TRIGGER_PIPELINES: << parameters.trigger_pipelines >>
+        DONT_TRIGGER_PIPELINES: << parameters.dont_trigger_pipelines >>
+        REPO_SLUG: << parameters.repo_slug >>
+        TRIGGER_PARAMETERS: << parameters.trigger_parameters >>
+        # IMPORT_UTILS_LOGGY: <<include(scripts/utils/loggy.py)>>
+        # IMPORT_UTILS_COMMON: <<include(scripts/utils/common.py)>>
+        # TRIGGER_PIPEILNES_PY: <<include(scripts/trigger_pipelines.py)>>
+      name: trigger pipelines
+      # shell: /bin/xonsh -i
+      # command: << include(scripts/trigger_pipelines.py) >>
+      command: trigger_pipelines.py
