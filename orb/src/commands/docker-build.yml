@@ -33,6 +33,10 @@ parameters:
     type: string
     default: ""
     description: "(Optional). Environment variables to set before running the docker build command. Example: DOCKER_BUILDKIT=1"
+  docker_build_ssh:
+    type: boolean
+    default: false
+    description: "(Optional). Enable SSH agent setup and --ssh default for docker build. Requires SSH keys to be available."
 
 steps:
   - set-up-cicd-env
@@ -46,6 +50,7 @@ steps:
         DOCKER_BUILD_ARGS: << parameters.docker_build_args >>
         DOCKER_BUILD_EXTRA_OPTIONS: << parameters.docker_build_extra_options >>
         DOCKER_BUILD_ENV_APPEND: << parameters.docker_build_env_append >>
+        DOCKER_BUILD_SSH: << parameters.docker_build_ssh >>
       name: Docker Build
       # shell: /bin/bash
       command: docker_build.py

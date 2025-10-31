@@ -47,6 +47,10 @@ parameters:
     type: string
     default: ""
     description: "(Optional). Environment variables to set before running the docker build command. Example: DOCKER_BUILDKIT=1"
+  docker_build_ssh:
+    type: boolean
+    default: false
+    description: "(Optional). Enable SSH agent setup and --ssh default for docker build. Requires SSH keys to be available."
   trigger_files:
     type: string
     default: ""
@@ -93,6 +97,7 @@ steps:
       docker_build_args: << parameters.docker_build_args >>
       docker_build_extra_options: << parameters.docker_build_extra_options >>
       docker_build_env_append: << parameters.docker_build_env_append >>
+      docker_build_ssh: << parameters.docker_build_ssh >>
   - when:
       condition: << parameters.trigger_pipelines >>
       steps:

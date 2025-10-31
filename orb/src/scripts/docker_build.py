@@ -60,6 +60,11 @@ _DOCKER_BUILD_ARGS = common.get_environ('DOCKER_BUILD_ARGS', None)
 _DOCKER_BUILD_EXTRA_OPTIONS = common.get_environ('DOCKER_BUILD_EXTRA_OPTIONS', None)
 
 #
+# Check if SSH should be enabled for docker build
+#
+_DOCKER_BUILD_SSH = common.get_environ('DOCKER_BUILD_SSH', 'false').lower() == 'true'
+
+#
 # Test if we passed in BUILD_VERSION as one of the args. If we didn't, then ensure it's set here.
 #
 if not _DOCKER_BUILD_ARGS:
@@ -131,7 +136,7 @@ aws.ecr_login_build()
 
 with common.ChDir(_DOCKERFILE_PATH):
     loggy.info("docker_build(): Running docker.docker to build the docker container")
-    if not docker.docker(_DOCKER_BUILD_COMMAND, env=_DOCKER_BUILD_ENV_APPEND):
+    if not docker.docker(_DOCKER_BUILD_COMMAND, env=_DOCKER_BUILD_ENV_APPEND, ssh=_DOCKER_BUILD_SSH):
         loggy.info("docker_build(): Docker failed. FAILING pipeline...")
         sys.exit(1)
 

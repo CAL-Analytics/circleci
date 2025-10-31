@@ -18,13 +18,17 @@ import loggy
 from common import subprocess_long as _long_run
 
 
-def docker(*args, env=None) -> bool:
+def docker(*args, env=None, ssh=False) -> bool:
     """
     Shell out to the Docker CLI.
 
     It is expected that the commands are sent in a single string as if you were typing it on the command line
 
     Example: docker.docker("build", "-t", "my_container:my_tag", ".")
+             docker.docker("build", "-t", "my_container:my_tag", ".", ssh=True)
+
+    Args:
+        ssh: If True, sets up ssh-agent and adds --ssh default to build commands
 
     Returns: True/False
     """
@@ -36,6 +40,41 @@ def docker(*args, env=None) -> bool:
         cmd = ["docker"] + args[0]
     else:
         cmd = ["docker"] + list(args)
+
+    # Handle SSH support for build commands
+    if ssh and "build" in cmd:
+        # Set up ssh-agent if not already running
+        import subprocess
+        try:
+            # Check if ssh-agent is already running
+            result = subprocess.run(["pgrep", "ssh-agent"], capture_output=True, text=True)
+            if result.returncode != 0:
+                loggy.info("docker.docker(): Setting up ssh-agent")
+                # Start ssh-agent
+                agent_output = subprocess.run(["ssh-agent", "-s"], capture_output=True, text=True, check=True)
+                # Export the environment variables
+                for line in agent_output.stdout.split('\n'):
+                    if 'SSH_AGENT_PID' in line or 'SSH_AUTH_SOCK' in line:
+                        key, value = line.split('=', 1)
+                        value = value.rstrip(';')
+                        os.environ[key] = value
+
+            # Add SSH key if available
+            ssh_key_path = os.environ.get('SSH_KEY_PATH', os.path.expanduser('~/.ssh/id_rsa'))
+            if os.path.exists(ssh_key_path):
+                loggy.info(f"docker.docker(): Adding SSH key from {ssh_key_path}")
+                subprocess.run(["ssh-add", ssh_key_path], check=True)
+            else:
+                loggy.info("docker.docker(): No SSH key found, attempting to add default key")
+                subprocess.run(["ssh-add"], check=False)  # Try to add default key
+
+        except subprocess.CalledProcessError as e:
+            loggy.warning(f"docker.docker(): Failed to setup SSH agent/keys: {e}")
+            return False
+
+        # Add --ssh default to the docker build command
+        cmd.append("--ssh")
+        cmd.append("default")
     
     loggy.info(f"docker.docker(): stdout: {' '.join(cmd)}")
     if env and isinstance(env, dict):
