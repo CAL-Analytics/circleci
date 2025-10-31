@@ -86,8 +86,8 @@ for _BUILD_ARG in _DOCKER_BUILD_ARGS.split(','):
 #
 # Now, add any extra options we might have passed
 #
-if _DOCKER_BUILD_EXTRA_OPTIONS:
-    _DOCKER_BUILD_COMMAND.extend(_DOCKER_BUILD_EXTRA_OPTIONS.split(' '))
+for _EXTRA_OPTION in _DOCKER_BUILD_EXTRA_OPTIONS.split(','):
+    _DOCKER_BUILD_COMMAND.extend(_EXTRA_OPTION.split(' '))
 
 #
 # Now we finish building out our docker build command with the final bits...
