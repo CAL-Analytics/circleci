@@ -62,7 +62,7 @@ _DOCKER_BUILD_EXTRA_OPTIONS = common.get_environ('DOCKER_BUILD_EXTRA_OPTIONS', N
 #
 # Check if SSH should be enabled for docker build
 #
-_DOCKER_BUILD_SSH = common.get_environ('DOCKER_BUILD_SSH', 'false').lower() == 'true'
+_DOCKER_BUILD_SSH = common.get_environ('DOCKER_BUILD_SSH', None)
 
 #
 # Test if we passed in BUILD_VERSION as one of the args. If we didn't, then ensure it's set here.

@@ -18,7 +18,7 @@ import loggy
 from common import subprocess_long as _long_run
 
 
-def docker(*args, env=None, ssh=False) -> bool:
+def docker(*args, env=None, ssh=None) -> bool:
     """
     Shell out to the Docker CLI.
 
