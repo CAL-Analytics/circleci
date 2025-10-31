@@ -39,6 +39,14 @@ parameters:
     type: string
     default: ""
     description: "(Optional). Comma separated list of build args to inject into the docker build. Example: PLUM_VERSION=6.0.0,BUILD_VERSION=24.05.07.33.3abcde"
+  docker_build_extra_options:
+    type: string
+    default: ""
+    description: "(Optional). Extra options to pass to the docker build command. Example: --ssh default"
+  docker_build_env_append:
+    type: string
+    default: ""
+    description: "(Optional). Environment variables to set before running the docker build command. Example: DOCKER_BUILDKIT=1"
   trigger_files:
     type: string
     default: ""
@@ -83,6 +91,8 @@ steps:
       dockerfile_name: << parameters.dockerfile_name >>
       docker_platform: << parameters.docker_platform >>
       docker_build_args: << parameters.docker_build_args >>
+      docker_build_extra_options: << parameters.docker_build_extra_options >>
+      docker_build_env_append: << parameters.docker_build_env_append >>
   - when:
       condition: << parameters.trigger_pipelines >>
       steps:

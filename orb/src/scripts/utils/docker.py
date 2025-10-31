@@ -18,7 +18,7 @@ import loggy
 from common import subprocess_long as _long_run
 
 
-def docker(*args) -> bool:
+def docker(*args, env=None) -> bool:
     """
     Shell out to the Docker CLI.
 
@@ -38,7 +38,14 @@ def docker(*args) -> bool:
         cmd = ["docker"] + list(args)
     
     loggy.info(f"docker.docker(): stdout: {' '.join(cmd)}")
-    output = _long_run(' '.join(cmd), check=False)
+    if env and isinstance(env, dict):
+        # grab current env vars and add them together with the env passed in
+        _env = os.environ.copy()
+        _env.update(env)
+        output = _long_run(' '.join(cmd), check=False, env=_env)
+    else:
+        output = _long_run(' '.join(cmd), check=False)
+
     loggy.info(f"docker.docker(): stdout: {output.stdout}")
     loggy.info(f"docker.docker(): stderr: {output.stderr}")
     loggy.info(f"docker.docker(): return: {str(output.returncode)}")

@@ -55,12 +55,17 @@ loggy.info(f"docker_build(): Setting _DOCKER_PLATFORM to {_DOCKER_PLATFORM}")
 _DOCKER_BUILD_ARGS = common.get_environ('DOCKER_BUILD_ARGS', None)
 
 #
+# Set any docker build extra options passed into us. This is a string of extra options to pass to the docker build command.
+#
+_DOCKER_BUILD_EXTRA_OPTIONS = common.get_environ('DOCKER_BUILD_EXTRA_OPTIONS', None)
+
+#
 # Test if we passed in BUILD_VERSION as one of the args. If we didn't, then ensure it's set here.
 #
 if not _DOCKER_BUILD_ARGS:
     _DOCKER_BUILD_ARGS = f"BUILD_VERSION={_BUILD_VERSION}"
 elif "BUILD_VERSION" not in _DOCKER_BUILD_ARGS:
-    _DOCKER_BUILD_ARGS = f"{DOCKER_BUILD_ARGS},BUILD_VERSION={_BUILD_VERSION}"
+    _DOCKER_BUILD_ARGS = f"{_DOCKER_BUILD_ARGS},BUILD_VERSION={_BUILD_VERSION}"
 else:
     #
     # If we get here, the BUILD_VERSION was passed into this pipeline, so we override what we would have
@@ -77,6 +82,12 @@ _DOCKER_BUILD_COMMAND = ["build", "--platform", _DOCKER_PLATFORM]
 for _BUILD_ARG in _DOCKER_BUILD_ARGS.split(','):
     _DOCKER_BUILD_COMMAND.append("--build-arg")
     _DOCKER_BUILD_COMMAND.append(_BUILD_ARG)
+
+#
+# Now, add any extra options we might have passed
+#
+if _DOCKER_BUILD_EXTRA_OPTIONS:
+    _DOCKER_BUILD_COMMAND.extend(_DOCKER_BUILD_EXTRA_OPTIONS.split(' '))
 
 #
 # Now we finish building out our docker build command with the final bits...
@@ -99,6 +110,12 @@ _DOCKER_BUILD_COMMAND.append(_DOCKERFILE_NAME)
 #
 _DOCKER_BUILD_COMMAND.append(".")
 
+#
+# Set any environment variables to append to the environment before running the docker build command
+#
+_DOCKER_BUILD_ENV_APPEND = common.get_environ('DOCKER_BUILD_ENV_APPEND', None)
+_DOCKER_BUILD_ENV_APPEND = {_DOCKER_BUILD_ENV_APPEND.split('=') for _DOCKER_BUILD_ENV_APPEND in _DOCKER_BUILD_ENV_APPEND.split(',')}
+
 # loggy.info("pipeline: *** SonarQube Code Scanning ***")
 # sonarqube.scan()
 
@@ -109,7 +126,7 @@ aws.ecr_login_build()
 
 with common.ChDir(_DOCKERFILE_PATH):
     loggy.info("docker_build(): Running docker.docker to build the docker container")
-    if not docker.docker(_DOCKER_BUILD_COMMAND):
+    if not docker.docker(_DOCKER_BUILD_COMMAND, env=_DOCKER_BUILD_ENV_APPEND):
         loggy.info("docker_build(): Docker failed. FAILING pipeline...")
         sys.exit(1)
 

@@ -25,6 +25,14 @@ parameters:
     type: string
     default: ""
     description: "(Optional). Comma separated list of build args to inject into the docker build. Example: PLUM_VERSION=6.0.0,BUILD_VERSION=24.05.07.33.3abcde"
+  docker_build_extra_options:
+    type: string
+    default: ""
+    description: "(Optional). Extra options to pass to the docker build command. Example: --ssh default"
+  docker_build_env_append:
+    type: string
+    default: ""
+    description: "(Optional). Environment variables to set before running the docker build command. Example: DOCKER_BUILDKIT=1"
 
 steps:
   - set-up-cicd-env
@@ -36,6 +44,8 @@ steps:
         DOCKERFILE_NAME: << parameters.dockerfile_name >>
         DOCKER_PLATFORM: << parameters.docker_platform >>
         DOCKER_BUILD_ARGS: << parameters.docker_build_args >>
+        DOCKER_BUILD_EXTRA_OPTIONS: << parameters.docker_build_extra_options >>
+        DOCKER_BUILD_ENV_APPEND: << parameters.docker_build_env_append >>
       name: Docker Build
       # shell: /bin/bash
       command: docker_build.py
