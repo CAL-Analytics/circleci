@@ -17,6 +17,8 @@ sys.path.insert(0, '/home/circleci/bin')
 import loggy
 from common import subprocess_long as _long_run
 
+import subprocess
+
 
 def docker(*args, env=None, ssh=None) -> bool:
     """
@@ -44,7 +46,6 @@ def docker(*args, env=None, ssh=None) -> bool:
     # Handle SSH support for build commands
     if ssh and "build" in cmd:
         # Set up ssh-agent if not already running
-        import subprocess
         try:
             # Check if ssh-agent is already running
             result = subprocess.run(["pgrep", "ssh-agent"], capture_output=True, text=True)
