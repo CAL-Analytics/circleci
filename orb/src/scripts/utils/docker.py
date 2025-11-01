@@ -76,6 +76,15 @@ def docker(*args, env=None, ssh=None) -> bool:
         cmd.append("--ssh")
         cmd.append("default")
     
+
+    #
+    # Show me the ssh-add output
+    #
+    ssh_add_output = subprocess.run(["ssh-add", "-L"], capture_output=True, text=True)
+    loggy.info(f"docker.docker(): ssh-add output: {ssh_add_output.stdout}")
+    loggy.info(f"docker.docker(): ssh-add stderr: {ssh_add_output.stderr}")
+    loggy.info(f"docker.docker(): ssh-add return: {str(ssh_add_output.returncode)}")
+
     loggy.info(f"docker.docker(): stdout: {' '.join(cmd)}")
     if env and isinstance(env, dict):
         # grab current env vars and add them together with the env passed in
