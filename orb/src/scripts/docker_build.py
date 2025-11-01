@@ -122,10 +122,11 @@ _DOCKER_BUILD_COMMAND.append(".")
 _DOCKER_BUILD_ENV_APPEND = common.get_environ('DOCKER_BUILD_ENV_APPEND', None)
 if _DOCKER_BUILD_ENV_APPEND:
     # make a dictionary of the environment variables to match os.environ format
-    _NEW_DOCKER_BUILD_ENV_APPEND = {}
+    _NEW_DOCKER_BUILD_ENV_APPEND = os.environ.copy()
     for _ENV_VAR in _DOCKER_BUILD_ENV_APPEND.split(','):
-        _NEW_DOCKER_BUILD_ENV_APPEND[_ENV_VAR.split('=')[0]] = _ENV_VAR.split('=')[1]
+        _NEW_DOCKER_BUILD_ENV_APPEND.update({_ENV_VAR.split('=')[0]: _ENV_VAR.split('=')[1]})
     _DOCKER_BUILD_ENV_APPEND = _NEW_DOCKER_BUILD_ENV_APPEND
+
 
 # loggy.info("pipeline: *** SonarQube Code Scanning ***")
 # sonarqube.scan()

@@ -61,10 +61,8 @@ def docker(*args, env=None, ssh=None) -> bool:
 
     loggy.info(f"docker.docker(): stdout: {' '.join(cmd)}")
     if env and isinstance(env, dict):
-        # grab current env vars and add them together with the env passed in
-        _env = os.environ.copy()
-        _env.update(env)
-        output = _long_run(' '.join(cmd), check=False, env=_env)
+        loggy.info(f"docker.docker(): Running with specific environment variables.")
+        output = _long_run(' '.join(cmd), check=False, env=env)
     else:
         output = _long_run(' '.join(cmd), check=False)
 
