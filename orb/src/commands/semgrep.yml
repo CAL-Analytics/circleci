@@ -1,0 +1,51 @@
+description: >
+  This command runs a semgrep scan with exclude rules as optional parameter.
+
+parameters:
+  semgrep_exclude_rules:
+    type: string
+    default: ""
+    description: "(Optional) space-separated list of semgrep rules to exclude."
+
+steps:
+  - run:
+      environment:
+        SEMGREP_EXCLUDE_RULES: << parameters.semgrep_exclude_rules >>
+      name: "Semgrep CE full scan"
+      command: |
+        # Build exclude rules from environment variable and file
+        EXCLUDE_RULES=""
+
+        # First, add rules from SEMGREP_EXCLUDE_RULES environment variable
+        if [ -n "$SEMGREP_EXCLUDE_RULES" ]; then
+          for rule in $SEMGREP_EXCLUDE_RULES; do
+            EXCLUDE_RULES="$EXCLUDE_RULES --exclude-rule $rule"
+          done
+        fi
+
+        # Second, add rules from .semgrepexcluderules file (if it exists)
+        if [ -f ".semgrepexcluderules" ]; then
+          while IFS= read -r rule || [ -n "$rule" ]; do
+            # Skip empty lines and lines starting with #
+            if [ -n "$rule" ] && [[ "$rule" != \#* ]]; then
+              EXCLUDE_RULES="$EXCLUDE_RULES --exclude-rule $rule"
+            fi
+          done < ".semgrepexcluderules"
+        fi
+
+        # Run semgrep scan with exclude rules
+        semgrep scan --config auto "$PWD" $EXCLUDE_RULES --json-output=/tmp/semgrep-report.json
+  - run:
+      command: |
+        python3 -m venv /tmp/venv
+        source /tmp/venv/bin/activate
+        pip3 install git+https://github.com/CAL-Analytics/semgrep-pretty-report.git || true
+        semgrep-pretty-report /tmp/semgrep-report.json -o /tmp/filtered-report.html
+  - store_artifacts:
+      name: "Semgrep CE full scan JSON report"
+      path: /tmp/semgrep-report.json
+      destination: semgrep-report.json
+  - store_artifacts:
+      name: "Semgrep CE full scan HTML report"
+      path: /tmp/filtered-report.html
+      destination: filtered-report.html

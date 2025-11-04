@@ -1,0 +1,10 @@
+description: >
+  Semgrep executor for running semgrep scans
+docker:
+  - image: semgrep/semgrep:<<parameters.tag>>
+parameters:
+  tag:
+    default: "latest"
+    description: >
+      Available tags can be found here: https://hub.docker.com/r/semgrep/semgrep/tags
+    type: string

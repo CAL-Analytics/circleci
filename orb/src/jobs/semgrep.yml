@@ -1,0 +1,25 @@
+description: >
+  This job performs a semgrep scan and outputs a pretty report html file as a viewable artifact.
+
+executor: semgrep
+
+parameters:
+  semgrep_exclude_rules:
+    type: string
+    default: ""
+    description: "(Optional) space-separated list of semgrep rules to exclude."
+    
+steps:
+  - checkout
+  - semgrep:
+      semgrep_exclude_rules: << parameters.semgrep_exclude_rules >>
+
+  # - slack-notify:
+  #     event: fail
+  #     custom_message: "Failed :fire:"
+  #     slack_thread_id: << parameters.slack_thread_id >>
+  # - slack-notify:
+  #     event: pass
+  #     custom_message: "Success :champagne:"
+  #     slack_thread_id: << parameters.slack_thread_id >>
+
