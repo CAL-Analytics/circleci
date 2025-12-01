@@ -741,9 +741,7 @@ def ecs_deploy_v2(clusterArn: str, serviceArn: str, tag: typing.Optional[str] = 
 
     Returns: True/False
     """
-    global _sessions
-
-    _s = _sessions.session if session is None else session
+    _s = init_session() if session is None else session
     _r = _s.session.region_name if region is None else region
     loggy.info(f"aws.ecsDeploy_v2(): BEGIN (using session named: {_s.name})")
 
@@ -830,9 +828,7 @@ def ecs_deploy(clusterArn: str, serviceArn: str, tag: typing.Optional[str] = Non
 
     Returns: True/False
     """
-    global _sessions
-
-    _s = _sessions.session if session is None else session
+    _s = init_session() if session is None else session
     _r = _s.session.region_name if region is None else region
     loggy.info(f"aws.ecsDeploy(): BEGIN (using session named: {_s.name})")
 
@@ -949,8 +945,7 @@ def ecs_get_latest_task_definition_arn(cluster: str, service: str, session: typi
 
     Returns: String containing task def arn
     """
-    global _sessions
-    _s = _sessions.session if session is None else session
+    _s = init_session() if session is None else session
     _r = _s.session.region_name if region is None else region
     loggy.info(f"aws.ecs_get_latest_task_definition_arn(): BEGIN (using session named: {_s.name})")
 
@@ -983,8 +978,7 @@ def ecs_get_task_definition_from_arn(task_def_arn: str, session: typing.Optional
 
     Returns: dict containing enough of the task def to clone it
     """
-    global _sessions
-    _s = _sessions.session if session is None else session
+    _s = init_session() if session is None else session
     _r = _s.session.region_name if region is None else region
     loggy.info(f"aws.ecs_get_task_definition_from_arn(): BEGIN (using session named: {_s.name})")
 
@@ -1108,8 +1102,7 @@ def ecs_register_task_definition_revision(task_def: dict, session: typing.Option
 
     Returns: dict of new task_def
     """
-    global _sessions
-    _s = _sessions.session if session is None else session
+    _s = init_session() if session is None else session
     _r = _s.session.region_name if region is None else region
     loggy.info(f"aws.ecs_register_new_task_definition(): BEGIN (using session named: {_s.name})")
 
@@ -1172,8 +1165,7 @@ def ecs_deploy_new_task_definition(cluster: str, service: str, task_def_arn: str
 
     Returns: True/False
     """
-    global _sessions
-    _s = _sessions.session if session is None else session
+    _s = init_session() if session is None else session
     _r = _s.session.region_name if region is None else region
     loggy.info(f"aws.ecs_deploy_new_task_definition(): BEGIN (using session named: {_s.name})")
 
@@ -1207,8 +1199,7 @@ def ecs_wait_services_stable(cluster: str, service: str, wait_time: typing.Optio
 
     Returns: True/False
     """
-    global _sessions
-    _s = _sessions.session if session is None else session
+    _s = init_session() if session is None else session
     _r = _s.session.region_name if region is None else region
     loggy.info(f"aws.ecs_wait_services_stable(): BEGIN (using session named: {_s.name})")
 
@@ -1255,8 +1246,7 @@ def ecs_deregister_task_def(task_def_arn: str, session: typing.Optional[AwsSessi
 
     Returns: True/False
     """
-    global _sessions
-    _s = _sessions.session if session is None else session
+    _s = init_session() if session is None else session
     _r = _s.session.region_name if region is None else region
     loggy.info(f"aws.ecs_deregister_task_def(): BEGIN (using session named: {_s.name})")
 
@@ -1462,8 +1452,8 @@ def ssm_get_parameter_from_build(name: str, session: typing.Optional[AwsSession]
     Returns String containing param value
     """
     _s = init_session() if session is None else session
-    loggy.info(f"aws.ssm_get_parameter_from_build(): BEGIN (using session named: {_sessions.name})")
-    return _sessions.ssm_get_parameter(name, session, region)
+    loggy.info(f"aws.ssm_get_parameter_from_build(): BEGIN (using session named: {_s.name})")
+    return _s.ssm_get_parameter(name, session, region)
 
 
 def ssm_get_parameter(name: str, session: typing.Optional[AwsSession] = None, region: typing.Optional[str] = None) -> str:
@@ -1773,8 +1763,7 @@ def secrets_get_secret_string(name: str, session: typing.Optional[AwsSession] = 
 
     Returns: dict containing secret string
     """
-    global _sessions
-    _s = _sessions.session if session is None else session
+    _s = init_session() if session is None else session
     _r = _s.session.region_name if region is None else region
 
     loggy.info(f"aws.secrets_get_secret_string(): BEGIN (using session named: {_s.name})")
@@ -1810,9 +1799,10 @@ def secrets_get_secret_string_from_build(name: str, session: typing.Optional[Aws
 
     Returns String containing Secret value
     """
-    global _sessions
-    loggy.info(f"aws.secrets_get_secret_string_from_build(): BEGIN (using session named: {_sessions.name})")
-    return _sessions.secrets_get_secret_string(name, session, region)
+    _s = init_session() if session is None else session
+    _r = _s.session.region_name if region is None else region
+    loggy.info(f"aws.secrets_get_secret_string_from_build(): BEGIN (using session named: {_s.name})")
+    return _s.secrets_get_secret_string(name, session, region)
 
 
 def secrets_put_secret_string(name: str, value: str, session: typing.Optional[AwsSession] = None, region: typing.Optional[str] = None) -> bool:
@@ -1827,8 +1817,7 @@ def secrets_put_secret_string(name: str, value: str, session: typing.Optional[Aw
 
     Returns: True/False
     """
-    global _sessions
-    _s = _sessions.session if session is None else session
+    _s = init_session() if session is None else session
     _r = _s.session.region_name if region is None else region
 
     loggy.info(f"aws.secrets_put_secret_string(): BEGIN (using session named: {_s.name})")
