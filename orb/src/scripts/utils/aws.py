@@ -682,7 +682,7 @@ def ecr_tag_to_build(container: str, tag_list: list, session: typing.Optional[Aw
 
     return True
 
-def ecr_tag(container: str, tag: typing.Optional[str], tag_list: typing.Optional[list], session: typing.Optional[AwsSession] = None, region: typing.Optional[str] = None) -> bool:
+def ecr_tag(container: str, tag: str, session: typing.Optional[AwsSession] = None, region: typing.Optional[str] = None) -> bool:
     """
     ecr_tag()
 
@@ -691,7 +691,6 @@ def ecr_tag(container: str, tag: typing.Optional[str], tag_list: typing.Optional
 
     container: String containing existing remote container with tag "container:tag"
     tag: Optional String containing new tag to add to the local container
-    tag_list: Optional String List of additional tags to add to the local container
 
     Returns: True/False
     """
