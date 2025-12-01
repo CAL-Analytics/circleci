@@ -3,6 +3,8 @@ description: >
 
 executor: semgrep
 
+resource_class: medium
+
 parameters:
   semgrep_exclude_rules:
     type: string
