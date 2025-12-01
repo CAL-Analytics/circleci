@@ -30,6 +30,7 @@ from docker import docker as _docker, login as _docker_login
 from common import subprocess_long as _long_run
 
 from subprocess_tee import run as _run
+from release import get_version
 
 class AwsCreds():
     access_key = None
@@ -696,6 +697,565 @@ def ecr_tag(container: str, tag: str, session: typing.Optional[AwsSession] = Non
 
 
 """
+ECS Utils
+"""
+
+
+def ecs_deploy_v2(clusterArn: str, serviceArn: str, tag: typing.Optional[str] = None, session: typing.Optional[AwsSession] = None, region: typing.Optional[str] = None) -> bool:
+    """
+    ecsDeploy_v2.py
+
+    Deploy a new task definition to an existing ECS Cluster/Service
+
+    NOTE 1: This is NOT blue/green. Look at `ecsBlueGreenDeploy.py`
+    NOTE 2: This will check if the clusterArn/serviceArn are NOT aws arns and instead
+            use them as ssm parameter names to grab the values
+
+    clusterArn: String (Optional) Will use ECS_CLUSTER_ARN from os.environ as default
+    serviceArn: String (Optional) Will use ECS_SERVICE_ARN from os.environ as default
+    tag: String (Optional) - Will use `release.get_version()` as default
+    session: AwsSession (Optional) will use a different session to build the client, default is _sessions
+    region: String (Optional)
+
+    Returns: True/False
+    """
+    global _sessions
+
+    _s = _sessions.session if session is None else session
+    _r = _s.session.region_name if region is None else region
+    loggy.info(f"aws.ecsDeploy_v2(): BEGIN (using session named: {_s.name})")
+
+    _TAG = tag if tag is not None else get_version()
+    _CLUSTER_ARN = clusterArn
+    _SERVICE_ARN = serviceArn
+
+    """
+    If the _CLUSTER_ARN or _SERVICE_ARN are not in ARN format, consider them SSM Param names
+    and use them to grab the ARNS out of SSM Params
+    """
+    _CLUSTER = _CLUSTER_ARN if ':' in _CLUSTER_ARN else ssm_get_parameter(name=_CLUSTER_ARN, session=_s, region=_r)
+    _SERVICE = _SERVICE_ARN if ':' in _SERVICE_ARN else ssm_get_parameter(name=_SERVICE_ARN, session=_s, region=_r)
+
+    """
+    go get the entire task definition for a service by name (might need the cluster too)
+    """
+    loggy.info("aws.ecsDeploy_v2(): Looking up latest task definition for cluster/service")
+    current_task_definition_arn = ecs_get_latest_task_definition_arn(cluster=_CLUSTER, service=_SERVICE, session=_s, region=_r)
+    loggy.info("aws.ecsDeploy_v2(): Storing the entire current task definition for rollback")
+    current_task_definition = ecs_get_task_definition_from_arn(task_def_arn=current_task_definition_arn, session=_s, region=_r)
+
+    """
+    set the new version provided by the caller
+    """
+    new_tag = _TAG
+
+    """
+    This iterates over the containers again to set
+    the new image in the container where
+    we simply get the old image and replace the :{tag}
+    before: docker.devops.rekor.io/blue/api:12345
+    after: docker.devops.rekor.io/blue/api:$newVersion
+    """
+    new_task_definition = ecs_set_new_image_in_task_def(task_def=current_task_definition, version=new_tag)
+    loggy.info(f"ecsDeploy_v2(): New Task Definition: {str(new_task_definition)}")
+
+    """
+    Go register the next task def
+    there should now be a new version of the task def
+    """
+    new_task_definition_arn = ecs_register_task_definition_revision(task_def=new_task_definition, session=_s, region=_r)
+
+    if not new_task_definition_arn:
+        return False
+
+    """
+    deploy new task def to the service
+    """
+    ecs_deploy_new_task_definition(cluster=_CLUSTER, service=_SERVICE, task_def_arn=new_task_definition_arn, session=_s, region=_r)
+
+    deploy_status = ecs_wait_services_stable(cluster=_CLUSTER, service=_SERVICE, wait_time=30, session=_s, region=_r)
+    if not deploy_status:
+        loggy.info("ecsDeploy_v2(): Deploy FAILED! Rolling back to original task def!")
+
+        ecs_deploy_new_task_definition(cluster=_CLUSTER, service=_SERVICE, task_def_arn=current_task_definition_arn, session=_s, region=_r)
+        deploy_status = ecs_wait_services_stable(cluster=_CLUSTER, service=_SERVICE, wait_time=30, session=_s, region=_r)
+        if not deploy_status:
+            raise Exception("aws.ecsDeploy_v2(): Rolling back to original task def failed!")
+
+        ecs_deregister_task_def(task_def=new_task_definition_arn, session=_s, region=_r)
+        loggy.info("aws.ecsDeploy_v2(): Deploy Failed! Rolled back to original task def.")
+        return False
+
+    loggy.info("aws.ecsDeploy_v2(): Deploy Successful")
+    return True
+
+
+def ecs_deploy(clusterArn: str, serviceArn: str, tag: typing.Optional[str] = None, session: typing.Optional[AwsSession] = None, region: typing.Optional[str] = None) -> bool:
+    """
+    ecsDeploy.py
+
+    Deploy a new task definition to an existing ECS Cluster/Service
+
+    NOTE 1: This is NOT blue/green. Look at `ecsBlueGreenDeploy.py`
+    NOTE 2: This will check if the clusterArn/serviceArn are NOT aws arns and instead
+            use them as ssm parameter names to grab the values
+
+    clusterArn: String (Optional) Will use ECS_CLUSTER_ARN from os.environ as default
+    serviceArn: String (Optional) Will use ECS_SERVICE_ARN from os.environ as default
+    tag: String (Optional) - Will use `release.get_version()` as default
+    session: AwsSession (Optional) will use a different session to build the client, default is _sessions
+    region: String (Optional)
+
+    Returns: True/False
+    """
+    global _sessions
+
+    _s = _sessions.session if session is None else session
+    _r = _s.session.region_name if region is None else region
+    loggy.info(f"aws.ecsDeploy(): BEGIN (using session named: {_s.name})")
+
+    _TAG = tag if tag is not None else get_version()
+    _CLUSTER_ARN = clusterArn
+    _SERVICE_ARN = serviceArn
+
+    """
+    If the _CLUSTER_ARN or _SERVICE_ARN are not in ARN format, consider them SSM Param names
+    and use them to grab the ARNS out of SSM Params
+    """
+    _CLUSTER = _CLUSTER_ARN if ':' in _CLUSTER_ARN else ssm_get_parameter(name=_CLUSTER_ARN, session=_s, region=_r)
+    _SERVICE = _SERVICE_ARN if ':' in _SERVICE_ARN else ssm_get_parameter(name=_SERVICE_ARN, session=_s, region=_r)
+
+    """
+    go get the entire task definition for a service by name (might need the cluster too)
+    """
+    loggy.info("aws.ecsDeploy(): Looking up latest task definition for cluster/service")
+    current_task_definition_arn = ecs_get_latest_task_definition_arn(cluster=_CLUSTER, service=_SERVICE, session=_s, region=_r)
+    loggy.info("aws.ecsDeploy(): Storing the entire current task definition for rollback")
+    current_task_definition = ecs_get_task_definition_from_arn(task_def_arn=current_task_definition_arn, session=_s, region=_r)
+
+    """
+    This iterates through all current_task_definition.containers
+    then for each container -> iterate through container.secrets
+    for each secret -> find one where the key is "VERSION"
+    if found, return the value which will be an ssm param arn
+    """
+    version_secret_param_arn = ecs_get_version_param_name_from_task_def(task_def=current_task_definition)
+
+    """
+    Get the currently deployed version number. We try to pull from ssm first, then fall back to secrets
+    """
+    loggy.info("aws.ecsDeploy(): Attempting to pull ssm version param first")
+    old_version = ssm_get_parameter(name=version_secret_param_arn, session=_s, region=_r)
+    if not old_version:
+        loggy.info("aws.ecsDeploy(): Attempting to pull secret version instead.")
+        old_version = secrets_get_secret_string(name=version_secret_param_arn, session=_s, region=_r)
+        if not old_version:
+            raise Exception(f"aws.ecsDeploy(): Ensure your CDK creates either an SSM or a Secret at {version_secret_param_arn} and that GoCD has read/write access.")
+
+    """
+    set the new version provided by the caller
+    """
+    new_version = _TAG
+
+    """
+    This iterates over the containers again to set
+    the new image in the container where
+    we simply get the old image and replace the :{tag}
+    before: docker.devops.rekor.io/blue/api:12345
+    after: docker.devops.rekor.io/blue/api:$newVersion
+    """
+    new_task_definition = ecs_set_new_image_in_task_def(task_def=current_task_definition, version=new_version)
+    loggy.info(f"ecsDeploy(): New Task Definition: {str(new_task_definition)}")
+
+    """
+    Go register the next task def
+    there should now be a new version of the task def
+    """
+    new_task_definition_arn = ecs_register_task_definition_revision(task_def=new_task_definition, session=_s, region=_r)
+
+    if not new_task_definition_arn:
+        return False
+
+    """
+    update the ssm param with the new tag.
+    This function should fail gracefully as not all appilcations use an SSM param
+    to store its version. Scout uses the git commit hash for version awareness.
+    """
+    loggy.info("aws.ecsDeploy(): Attempting to push ssm version param first")
+    if not ssm_put_parameter(name=version_secret_param_arn, value=_TAG, session=_s, region=_r):
+        loggy.info("aws.ecsDeploy(): Attempting to push secret version param instead")
+        if not secrets_put_secret_string(name=version_secret_param_arn, value=_TAG, session=_s, region=_r):
+            raise Exception(f"aws.ecsDeploy(): Ensure your CDK creates either an SSM or a Secret at {version_secret_param_arn} and that GoCD has read/write access.")
+
+    """
+    deploy new task def to the service
+    """
+    ecs_deploy_new_task_definition(cluster=_CLUSTER, service=_SERVICE, task_def_arn=new_task_definition_arn, session=_s, region=_r)
+
+    deploy_status = ecs_wait_services_stable(cluster=_CLUSTER, service=_SERVICE, session=_s, region=_r)
+    if not deploy_status:
+        loggy.info("ecsDeploy(): Deploy FAILED! Rolling back to original task def!")
+
+        # Roll back procedures by rolling back the version param and setting the service back to the original task def
+        loggy.info("aws.ecsDeploy(): Attempting to push ssm version param first")
+        if not ssm_put_parameter(name=version_secret_param_arn, value=old_version, session=_s, region=_r):
+            loggy.info("aws.ecsDeploy(): Attempting to push secret version param instead")
+            if not secrets_put_secret_string(name=version_secret_param_arn, value=old_version, session=_s, region=_r):
+                raise Exception(f"aws.ecsDeploy(): Ensure your CDK creates either an SSM or a Secret at {version_secret_param_arn} and that GoCD has read/write access.")
+
+        ecs_deploy_new_task_definition(cluster=_CLUSTER, service=_SERVICE, task_def_arn=current_task_definition_arn, session=_s, region=_r)
+        deploy_status = ecs_wait_services_stable(cluster=_CLUSTER, service=_SERVICE, session=_s, region=_r)
+        if not deploy_status:
+            raise Exception("aws.ecsDeploy(): Rolling back to original task def failed!")
+
+        ecs_deregister_task_def(task_def=new_task_definition_arn, session=_s, region=_r)
+        loggy.info("aws.ecsDeploy(): Deploy Failed! Rolled back to original task def.")
+        return False
+
+    loggy.info("aws.ecsDeploy(): Deploy Successful")
+    return True
+
+
+def ecs_get_latest_task_definition_arn(cluster: str, service: str, session: typing.Optional[AwsSession] = None, region: typing.Optional[str] = None) -> str:
+    """
+    ecs_get_latest_task_definition_arn()
+
+    Get the latest task definition arn for a particular service in a particular cluster
+
+    cluster: String containing ECS Cluster ARN
+    service: String containing ECS Service ARN
+
+    Returns: String containing task def arn
+    """
+    global _sessions
+    _s = _sessions.session if session is None else session
+    _r = _s.session.region_name if region is None else region
+    loggy.info(f"aws.ecs_get_latest_task_definition_arn(): BEGIN (using session named: {_s.name})")
+
+    loggy.info(f"aws.ecs_get_latest_task_definition_arn(): Searching for latest task_definition_arn in cluster/service ({cluster} / {service})")
+
+    task_def_arn = None
+    try:
+        client = _s.session.client('ecs', region_name=_r)
+        response = client.describe_services(
+            cluster=cluster,
+            services=[
+                service
+            ]
+        )
+        task_def_arn = response['services'][0]['taskDefinition']
+    except Exception as e:
+        loggy.error(f"aws.ecs_get_latest_task_definition_arn(): Error: {str(e)}")
+        raise
+
+    return task_def_arn
+
+
+def ecs_get_task_definition_from_arn(task_def_arn: str, session: typing.Optional[AwsSession] = None, region: typing.Optional[str] = None) -> dict:
+    """
+    ecs_get_task_definition_from_arn()
+
+    Get clonable task definition (json) from a task definition arn
+
+    task_def_arn: String containing task def arn
+
+    Returns: dict containing enough of the task def to clone it
+    """
+    global _sessions
+    _s = _sessions.session if session is None else session
+    _r = _s.session.region_name if region is None else region
+    loggy.info(f"aws.ecs_get_task_definition_from_arn(): BEGIN (using session named: {_s.name})")
+
+    loggy.info(f"aws.ecs_get_task_definition_from_arn(): Reading in full task definition from: {task_def_arn}")
+
+    try:
+        client = _s.session.client('ecs', region_name=_r)
+        response = client.describe_task_definition(
+            taskDefinition=task_def_arn
+        )
+
+        task_def = response['taskDefinition']
+        loggy.info(f"aws.ecs_get_task_definition_from_arn(): DUMPING TASK DEF: {str(task_def)}")
+
+    except Exception as e:
+        loggy.error(f"aws.ecs_get_task_definition_from_arn(): Error: {str(e)}")
+        raise
+
+    # remove_props_list = [
+    #     "taskDefinitionArn",
+    #     "revision",
+    #     "status",
+    #     "requiresAttributes",
+    #     "compatibilities",
+    #     "runtimePlatform",
+    #     "inferenceAccelerators",
+    #     "registeredAt",
+    #     "deregisteredAt",
+    #     "registeredBy",
+    #     "ephemeralStorage"
+    # ]
+    # for prop in remove_props_list:
+    #     if prop in task_def:
+    #         del task_def[prop]
+
+    # now we remove any empty values or lists
+    # task_def = remove_empty_from_dict(task_def)
+
+    return task_def
+
+
+def __ecs_check_version_in_secrets(secrets: dict) -> str:
+    """
+    """
+    param_name = None
+    for secret in secrets:
+        if secret.get('name') and 'VERSION' in secret['name']:
+            param_name = secret.get('valueFrom')
+            break
+    return param_name
+
+
+def ecs_get_version_param_name_from_task_def(task_def: dict) -> str:
+    """
+    ecs_get_version_param_name_from_task_def()
+
+    Get the `version` SSM param name from the task definition
+
+    task_def: dict
+
+    Return: String containing version SSM param name
+    """
+    loggy.info(f"aws.ecs_get_version_param_name_from_task_def(): Searching for VERSION ssm parameter arn in containers inside of {task_def}")
+
+    param_name = None
+    if not task_def.get('containerDefinitions'):
+        raise Exception("aws.ecs_get_version_param_name_from_task_def(): Could not locate containerDefinitions inside of the task_def dict")
+        return param_name
+
+    for container in task_def['containerDefinitions']:
+        if container.get('secrets'):
+            param_name = __ecs_check_version_in_secrets(container['secrets'])
+            if param_name:
+                break
+
+    return param_name
+
+
+# def ecs_save_task_def_to_json_file(current_task_definition, old_task_definition_file_name):
+#     """
+#     ecs_save_task_def_to_json_file()
+#
+#     Save our task definition to a json file.
+#     """
+
+
+def ecs_set_new_image_in_task_def(task_def: dict, version: str) -> dict:
+    """
+    ecs_set_new_image_in_task_def()
+
+    Set/replace the tag/version of the containers in a task def hashmap and returns a new hashmap
+
+    task_def: dict containing task definition
+    version: String containiing new container tag/version
+
+    Returns: dict task_def
+    """
+    if not task_def.get('containerDefinitions'):
+        raise Exception("aws.ecs_set_new_image_in_task_def(): containerDefinitions not found in task_def.")
+
+    for container in task_def['containerDefinitions']:
+        if not container.get('image'):
+            raise Exception("aws.ecs_set_new_image_in_task_def(): container image value not found in returned list.")
+            return {}
+
+        _image, _original_image_version = container['image'].split(':')
+        _image = f"{_image}:{version}"
+        loggy.info(f"aws.ecs_set_new_image_in_task_def(): Changing image version ({_original_image_version}) to ({version}) for container named ({container['name']}): new image is ${_image}")
+        container['image'] = _image
+
+    return task_def
+
+
+def ecs_register_task_definition_revision(task_def: dict, session: typing.Optional[AwsSession] = None, region: typing.Optional[str] = None) -> dict:
+    """
+    ecs_register_new_task_definition()
+
+    Register a new task definition in ECS
+
+    task_def: dict of a task definition to register
+
+    Returns: dict of new task_def
+    """
+    global _sessions
+    _s = _sessions.session if session is None else session
+    _r = _s.session.region_name if region is None else region
+    loggy.info(f"aws.ecs_register_new_task_definition(): BEGIN (using session named: {_s.name})")
+
+    loggy.info("aws.ecs_register_new_task_definition(): Registering new task definition.")
+
+    try:
+        client = _s.session.client('ecs', region_name=_r)
+
+        #
+        # 2023-07-10 TAW - Adding runtimePlatform now that we can choose between ARM64 and x86_64
+        #
+        isFargate = False
+        for c in task_def['requiresCompatibilities']:
+            if 'FARGATE' in c:
+                isFargate = True
+
+        if isFargate:
+            response = client.register_task_definition(
+                family=task_def['family'],
+                containerDefinitions=task_def['containerDefinitions'],
+                volumes=task_def['volumes'],
+                taskRoleArn=task_def.get('taskRoleArn', None),
+                executionRoleArn=task_def.get('executionRoleArn', None),
+                requiresCompatibilities=task_def['requiresCompatibilities'],
+                networkMode=task_def['networkMode'],
+                cpu=task_def.get('cpu', ''),
+                memory=task_def.get('memory', ''),
+                runtimePlatform=task_def.get('runtimePlatform', {}),
+                tags=task_def.get('tags', [{ "key": "cicd", "value": "deployed via cicd"}])
+            )
+        else:
+            response = client.register_task_definition(
+                family=task_def['family'],
+                containerDefinitions=task_def['containerDefinitions'],
+                volumes=task_def['volumes'],
+                taskRoleArn=task_def.get('taskRoleArn', None),
+                executionRoleArn=task_def.get('executionRoleArn', None),
+                requiresCompatibilities=task_def['requiresCompatibilities'],
+                networkMode=task_def['networkMode'],
+                tags=task_def.get('tags', [{ "key": "cicd", "value": "deployed via cicd"}])
+            )
+
+        task_def = response['taskDefinition']['taskDefinitionArn']
+    except Exception as e:
+        loggy.error(f"aws.ecs_register_new_task_definition(): Error: {str(e)}")
+        return {}
+
+    return task_def
+
+
+def ecs_deploy_new_task_definition(cluster: str, service: str, task_def_arn: str, session: typing.Optional[AwsSession] = None, region: typing.Optional[str] = None) -> bool:
+    """
+    ecs_deploy_new_task_definition()
+
+    Deploy a task defition to a particular ECS Cluster/Service
+
+    cluster: String containing ECS Cluster Arn
+    service: String containing ECS Service Arn
+    task_def_arn: String containing task definition arn
+
+    Returns: True/False
+    """
+    global _sessions
+    _s = _sessions.session if session is None else session
+    _r = _s.session.region_name if region is None else region
+    loggy.info(f"aws.ecs_deploy_new_task_definition(): BEGIN (using session named: {_s.name})")
+
+    loggy.info(f"aws.ecs_deploy_new_task_definition(): Deploying task defintion ({task_def_arn}) to cluster ({cluster} / service ({service}).")
+
+    try:
+        client = _s.session.client('ecs', region_name=_r)
+        client.update_service(
+            cluster=cluster,
+            service=service,
+            taskDefinition=task_def_arn
+        )
+
+    except Exception as e:
+        loggy.error(f"aws.ecs_deploy_new_task_definition(): Error: {str(e)}")
+        return False
+
+    return True
+
+
+def ecs_wait_services_stable(cluster: str, service: str, wait_time: typing.Optional[int] = 10, session: typing.Optional[AwsSession] = None, region: typing.Optional[str] = None) -> bool:
+    """
+    ecs_wait_services_stable()
+
+    Wait up to {wait_time} minutes for ECS services to become stable.
+    NOTE: Ecs waiter.wait will wait for up to 10 minute. So the wait_time will be divided by 10m and rounded for X number of 10m attempts.
+
+    cluster: String containing cluster arn
+    service: String containing service arn
+    wait_time: (Optional) Integer specifying wait time in minutes. Default is 10m
+
+    Returns: True/False
+    """
+    global _sessions
+    _s = _sessions.session if session is None else session
+    _r = _s.session.region_name if region is None else region
+    loggy.info(f"aws.ecs_wait_services_stable(): BEGIN (using session named: {_s.name})")
+
+    loggy.info(f"aws.ecs_wait_services_stable(): Waiting for services to become stable on cluster ({cluster} / service ({service}).")
+
+    #
+    # Each waiter only waits for up to 10 minutes
+    #
+    wait_attempts = round(wait_time/10)
+    attempt = 0
+    while True:
+        try:
+            client = _s.session.client('ecs', region_name=_r)
+            waiter = client.get_waiter('services_stable')
+
+            waiter.wait(
+                cluster=cluster,
+                services=[
+                    service
+                ])
+
+            # If we get here, we can break out of the while loop...
+            break
+        except Exception as e:
+            loggy.info(f"aws.ecs_wait_services_stable(): The services have not become stable yet: {str(e)}")
+
+            attempt = attempt + 1
+            if attempt >= wait_attempts:
+                loggy.info(f"aws.ecs_wait_services_stable(): Too many attempts. Failing.")
+                return False               
+
+            loggy.info(f"aws.ecs_wait_services_stable(): Continuing wait for attempt # {attempt}")
+
+    return True
+
+
+def ecs_deregister_task_def(task_def_arn: str, session: typing.Optional[AwsSession] = None, region: typing.Optional[str] = None) -> bool:
+    """
+    ecs_deregister_task_def()
+
+    Deregister a task definition
+
+    task_def_arn: String containing task definition arn
+
+    Returns: True/False
+    """
+    global _sessions
+    _s = _sessions.session if session is None else session
+    _r = _s.session.region_name if region is None else region
+    loggy.info(f"aws.ecs_deregister_task_def(): BEGIN (using session named: {_s.name})")
+
+    loggy.info(f"aws.ecs_deregister_task_def(): Deregistering task definition: {task_def_arn}")
+
+    try:
+        client = _s.session.client('ecs', region_name=_r)
+        response = client.deregister_task_definition(
+            taskDefinition=task_def_arn
+        )
+        if not response.get('taskDefinition') or not response['taskDefinition'].get('deregisteredAt'):
+            raise Exception
+    except Exception as e:
+        loggy.info(f"aws.ecs_deregister_task_def(): Failed to deregister task definition: {str(e)}")
+        return False
+
+    return True
+
+
+
+"""
 S3 Utils
 """
 
@@ -1169,5 +1729,107 @@ def route53_update_txt_record(record_name: str,
         return True
     except Exception as e:
         loggy.error("aws.route53_update_txt_record(): Error: " + str(e))
+
+    return False
+
+
+"""
+SecretsManger Utils
+"""
+
+
+def secrets_get_secret_string(name: str, session: typing.Optional[AwsSession] = None, region: typing.Optional[str] = None) -> dict:
+    """
+    secrets_get_secret_string()
+
+    Retrieve sectret string value using ENV Variables as Credentials.
+    This will retrieve the AWSCURRENT version.
+
+    name is required
+    region defaults to AWS_DEFAULT_REGION or us-east-1
+    session will use a different session to build the client, default is _sessions
+
+    Returns: dict containing secret string
+    """
+    global _sessions
+    _s = _sessions.session if session is None else session
+    _r = _s.session.region_name if region is None else region
+
+    loggy.info(f"aws.secrets_get_secret_string(): BEGIN (using session named: {_s.name})")
+    loggy.info(f"aws.secrets_get_secret_string(): region name {_r}")
+    try:
+        client = _s.session.client(service_name='secretsmanager', region_name=_r)
+
+        loggy.info(f"aws.secrets_get_secret_string(): getting secret from: {name}")
+        response = client.get_secret_value(SecretId=name)
+
+        try:
+            ret_val = json.loads(response['SecretString'])
+            loggy.info(f"aws.secrets_get_secret_string(): Returning a json object from secrets.")
+            return ret_val
+        except json.decoder.JSONDecodeError as e:
+            loggy.info(f"aws.secrets_get_secret_string(): Returing a string from secrets.")
+            return response['SecretString']            
+
+    except Exception as e:
+        loggy.error("aws.secrets_get_secret_string(): Exception: " + str(e))
+
+    return {}
+
+def secrets_get_secret_string_from_build(name: str, session: typing.Optional[AwsSession] = None, region: typing.Optional[str] = None) -> str:
+    """
+    secrets_get_secret_string_from_build()
+
+    Get a Secret Value from the build account.
+
+    name: String containing param friendly name or arn. Will convert arn into friendly name before use.
+    session: aws.Sessions() will use a different session to build the client, default is _sessions
+    region: String defaults to AWS_DEFAULT_REGION or us-east-1
+
+    Returns String containing Secret value
+    """
+    global _sessions
+    loggy.info(f"aws.secrets_get_secret_string_from_build(): BEGIN (using session named: {_sessions.name})")
+    return _sessions.secrets_get_secret_string(name, session, region)
+
+
+def secrets_put_secret_string(name: str, value: str, session: typing.Optional[AwsSession] = None, region: typing.Optional[str] = None) -> bool:
+    """
+    secrets_put_secret_string()
+
+    Put sectret string value.
+
+    name is required
+    region defaults to AWS_DEFAULT_REGION or us-east-1
+    session will use a different session to build the client, default is _sessions
+
+    Returns: True/False
+    """
+    global _sessions
+    _s = _sessions.session if session is None else session
+    _r = _s.session.region_name if region is None else region
+
+    loggy.info(f"aws.secrets_put_secret_string(): BEGIN (using session named: {_s.name})")
+    loggy.info(f"aws.secrets_put_secret_string(): region name {_r}")
+    try:
+
+        # response = client.put_secret_value(
+        #     ClientRequestToken='EXAMPLE2-90ab-cdef-fedc-ba987EXAMPLE',
+        #     SecretId='MyTestDatabaseSecret',
+        #     SecretString='{"username":"david","password":"EXAMPLE-PASSWORD"}',
+        # )
+
+        client = _s.session.client(service_name='secretsmanager', region_name=_r)
+
+        response = client.put_secret_value(
+            SecretId=name,
+            ClientRequestToken=f"GOCD-{uuid.uuid4()}",
+            SecretString=value
+        )
+
+        if 'VersionId' in response:
+            return True
+    except Exception as e:
+        loggy.error("aws.secrets_put_secret_string(): Exception: " + str(e))
 
     return False

@@ -1,0 +1,38 @@
+description: >
+  This job deploys a new task definition to an existing ECS Cluster/Service.
+
+executor: default
+
+resource_class: small
+
+parameters:
+  app_name:
+    type: string
+    description: "App name, which doubles as repository name. i.e. unfurly/redirector"
+  env_name:
+    type: string
+    description: "Environment name. i.e. dev"
+  cluster_arn:
+    type: string
+    description: "ECS Cluster ARN"
+  service_arn:
+    type: string
+    description: "ECS Service ARN"
+  slack_thread_id:
+    type: string
+    default: "thready"
+    description: "The Slack thread id for notifications."
+    
+steps:
+  - ecs-deploy:
+      app_name: << parameters.app_name >>
+      env_name: << parameters.env_name >>
+      cluster_arn: << parameters.cluster_arn >>
+      service_arn: << parameters.service_arn >>
+
+  # - slack-notify:
+  #     event: fail
+  #     custom_message: "Failed :fire:"
+  #     slack_thread_id: << parameters.slack_thread_id >>
+
+
