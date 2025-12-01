@@ -14,7 +14,7 @@ import os
 import sys
 import json
 from subprocess_tee import run as _run
-from aws import cloudfront_get_kvs_key, cloudfront_update_kvs_key
+# from aws import cloudfront_get_kvs_key, cloudfront_update_kvs_key
 from enum import Enum
 from dns import resolver
 import typing
@@ -24,7 +24,7 @@ sys.path.insert(0, '/home/circleci/bin')
 
 import loggy
 from common import get_environ, resolve_pipeline_variable, ChDir
-from aws import route53_update_txt_record
+# from aws import route53_update_txt_record
 
 last_weight = {}
 last_green_version = {}
@@ -502,74 +502,74 @@ def get_routing_info(record_name):
 #         loggy.error(f"release.get_routing_weight(): Error resolving DNS for {record_name}: {e}")
 #         return -1  # Default to -1 if DNS fails
 
-def get_inactive_color(record_name: str | None = None, kvs_arn: str | None = None, kvs_key: str | None = None, force_routing: typing.Optional[bool] = None) -> str:
-    loggy.info("release.get_inactive_color: BEGIN")
+# def get_inactive_color(record_name: str | None = None, kvs_arn: str | None = None, kvs_key: str | None = None, force_routing: typing.Optional[bool] = None) -> str:
+#     loggy.info("release.get_inactive_color: BEGIN")
 
-    info = {}
-    if kvs_arn and kvs_key:
-        info = cloudfront_get_kvs_key(kvs_arn=kvs_arn, kvs_key=kvs_key)
-        if info.startswith('{'):
-            info = json.loads(info.replace("'", '"'))
-    else:
-        info = get_routing_info(record_name)
+#     info = {}
+#     if kvs_arn and kvs_key:
+#         info = cloudfront_get_kvs_key(kvs_arn=kvs_arn, kvs_key=kvs_key)
+#         if info.startswith('{'):
+#             info = json.loads(info.replace("'", '"'))
+#     else:
+#         info = get_routing_info(record_name)
 
-    weight = info['weight']
-    if weight < 0:
-        loggy.info(f"release.get_inactive_color: Unknown weight {weight}. Returning None")
-        return None
+#     weight = info['weight']
+#     if weight < 0:
+#         loggy.info(f"release.get_inactive_color: Unknown weight {weight}. Returning None")
+#         return None
 
-    active_color = None
-    inactive_color = None
+#     active_color = None
+#     inactive_color = None
 
-    #
-    # If we are weighted more to the blue side, we will deploy to green
-    #
-    if weight < 50:
-        active_color = "blue"
-        inactive_color = "green"
-    if weight >= 50:
-        active_color = "green"
-        inactive_color = "blue"
+#     #
+#     # If we are weighted more to the blue side, we will deploy to green
+#     #
+#     if weight < 50:
+#         active_color = "blue"
+#         inactive_color = "green"
+#     if weight >= 50:
+#         active_color = "green"
+#         inactive_color = "blue"
 
-    #
-    # If force_routing is set, we make sure routing is 100% weighted to the most weighted live color
-    #
-    if force_routing and weight != 0 and weight != 100:
-        loggy.info(f"release.get_inactive_color: Forcing active color to {active_color}")
-        info[active_color] = get_version()
-        info['weight'] = FULL_ROUTING[active_color]
-        if kvs_arn and kvs_key:
-            if not set_active_color(kvs_arn=kvs_arn, kvs_key=kvs_key, info=info):
-                loggy.info(f"release.get_inactive_color: Failed Forcing active color to {active_color}")
-                return None
-        else:
-            if not set_active_color(record_name=record_name, info=info):
-                loggy.info(f"release.get_inactive_color: Failed Forcing active color to {active_color}")
-                return None
+#     #
+#     # If force_routing is set, we make sure routing is 100% weighted to the most weighted live color
+#     #
+#     if force_routing and weight != 0 and weight != 100:
+#         loggy.info(f"release.get_inactive_color: Forcing active color to {active_color}")
+#         info[active_color] = get_version()
+#         info['weight'] = FULL_ROUTING[active_color]
+#         if kvs_arn and kvs_key:
+#             if not set_active_color(kvs_arn=kvs_arn, kvs_key=kvs_key, info=info):
+#                 loggy.info(f"release.get_inactive_color: Failed Forcing active color to {active_color}")
+#                 return None
+#         else:
+#             if not set_active_color(record_name=record_name, info=info):
+#                 loggy.info(f"release.get_inactive_color: Failed Forcing active color to {active_color}")
+#                 return None
 
-    return inactive_color
+#     return inactive_color
 
-def set_active_color(info: dict, record_name: str | None = None, kvs_arn: str | None = None, kvs_key: str | None = None) -> bool:
-    """
-    set_active_color()
+# def set_active_color(info: dict, record_name: str | None = None, kvs_arn: str | None = None, kvs_key: str | None = None) -> bool:
+#     """
+#     set_active_color()
 
-    Set the active color in routing TXT record
+#     Set the active color in routing TXT record
 
-    record_name str Record name to modify
-    kvs_arn str Key Value Store ARN to modify
-    kvs_key str Key to modify
-    info dict Dictionary of weighting info to write to route53 or kvs
-    """
-    loggy.info(f"release.set_active_color: BEGIN - Setting active color.")
-    if record_name:
-        domain_name = '.'.join(record_name.split('.')[1:])
-        record_name = record_name.split('.')[0]
-        return route53_update_txt_record(record_name=record_name, domain_name=domain_name, txt=str(info))
-    elif kvs_arn and kvs_key:
-        return cloudfront_update_kvs_key(kvs_arn=kvs_arn, kvs_key=kvs_key, value=str(info))
-    else:
-        loggy.info(f"release.set_active_color: No record_name or kvs_arn and kvs_key provided. Skipping.")
-        return False
+#     record_name str Record name to modify
+#     kvs_arn str Key Value Store ARN to modify
+#     kvs_key str Key to modify
+#     info dict Dictionary of weighting info to write to route53 or kvs
+#     """
+#     loggy.info(f"release.set_active_color: BEGIN - Setting active color.")
+#     if record_name:
+#         domain_name = '.'.join(record_name.split('.')[1:])
+#         record_name = record_name.split('.')[0]
+#         return route53_update_txt_record(record_name=record_name, domain_name=domain_name, txt=str(info))
+#     elif kvs_arn and kvs_key:
+#         return cloudfront_update_kvs_key(kvs_arn=kvs_arn, kvs_key=kvs_key, value=str(info))
+#     else:
+#         loggy.info(f"release.set_active_color: No record_name or kvs_arn and kvs_key provided. Skipping.")
+#         return False
 
 def package(folder: str, app_name: typing.Optional[str] = None, version: typing.Optional[str] = None) -> str:
     loggy.info(f"release.package(): BEGIN")

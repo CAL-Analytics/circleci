@@ -30,7 +30,7 @@ from docker import docker as _docker, login as _docker_login
 from common import subprocess_long as _long_run
 
 from subprocess_tee import run as _run
-from release import get_version
+from release import get_version as _get_version
 
 class AwsCreds():
     access_key = None
@@ -725,7 +725,7 @@ def ecs_deploy_v2(clusterArn: str, serviceArn: str, tag: typing.Optional[str] = 
     _r = _s.session.region_name if region is None else region
     loggy.info(f"aws.ecsDeploy_v2(): BEGIN (using session named: {_s.name})")
 
-    _TAG = tag if tag is not None else get_version()
+    _TAG = tag if tag is not None else _get_version()
     _CLUSTER_ARN = clusterArn
     _SERVICE_ARN = serviceArn
 
@@ -814,7 +814,7 @@ def ecs_deploy(clusterArn: str, serviceArn: str, tag: typing.Optional[str] = Non
     _r = _s.session.region_name if region is None else region
     loggy.info(f"aws.ecsDeploy(): BEGIN (using session named: {_s.name})")
 
-    _TAG = tag if tag is not None else get_version()
+    _TAG = tag if tag is not None else _get_version()
     _CLUSTER_ARN = clusterArn
     _SERVICE_ARN = serviceArn
 
