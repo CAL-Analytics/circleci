@@ -16,6 +16,10 @@ parameters:
     type: string
     default: arm.medium
     description: "Resource class to use for build. small is default for dev_amd64_rc and arm.medium is default for dev_arm64_rc"
+  docker_layer_caching:
+    type: boolean
+    default: false
+    description: "Enable Docker layer caching. Defaults to false."
   app_name:
     type: string
     description: "Application name as defined in CDK stack properties file."
@@ -87,7 +91,8 @@ steps:
       steps:
         - git-changes:
             trigger_files: << parameters.trigger_files >>
-  - setup_remote_docker
+  - setup_remote_docker:
+      docker_layer_caching: << parameters.docker_layer_caching >>
   - docker-build:
       app_name: << parameters.app_name >>
       env_name: << parameters.env_name >>
