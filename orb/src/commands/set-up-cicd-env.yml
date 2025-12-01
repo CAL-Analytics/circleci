@@ -39,6 +39,7 @@ steps:
         CREATE_ROBOTS_TXT: <<include(scripts/create_robots_txt.py.b64)>>
         DOCKER_BUILD: <<include(scripts/docker_build.py.b64)>>
         ECS_DEPLOY: <<include(scripts/ecs_deploy.py.b64)>>
+        ECS_DEPLOY_MANY: <<include(scripts/ecs_deploy_many.py.b64)>>
         ECR_PROMOTE: <<include(scripts/ecr_promote.py.b64)>>
         GIT_CHANGES: <<include(scripts/git_changes.py.b64)>>
         GIT_PROMOTE: <<include(scripts/git_promote.py.b64)>>
@@ -80,6 +81,7 @@ steps:
         echo $DOCKER_BUILD | base64 -d >$CICD_HOME/docker_build.py
         echo $ECR_PROMOTE | base64 -d >$CICD_HOME/ecr_promote.py
         echo $ECS_DEPLOY | base64 -d >$CICD_HOME/ecs_deploy.py
+        echo $ECS_DEPLOY_MANY | base64 -d >$CICD_HOME/ecs_deploy_many.py
         echo $GIT_CHANGES | base64 -d >$CICD_HOME/git_changes.py
         echo $GIT_PROMOTE | base64 -d >$CICD_HOME/git_promote.py
         echo $TRIGGER_PIPELINES | base64 -d >$CICD_HOME/trigger_pipelines.py

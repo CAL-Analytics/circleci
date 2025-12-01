@@ -1,0 +1,31 @@
+description: >
+  This command deploys a new task definition to an existing ECS Cluster/Service.
+
+parameters:
+  app_name:
+    type: string
+    description: "App name, which doubles as repository name. i.e. unfurly/api"
+  env_name:
+    type: string
+    description: "Environment name. i.e. dev"
+  cluster_arn:
+    type: string
+    description: "ECS Cluster ARN"
+  service_arns:
+    type: string
+    description: "ECS Service ARNs (comma separated)"
+  slack_thread_id:
+    type: string
+    default: "thready"
+
+steps:
+  - checkout
+  - set-up-cicd-env
+  - run:
+      environment:
+        APP_NAME: << parameters.app_name >>
+        ENV_NAME: << parameters.env_name >>
+        CLUSTER_ARN: << parameters.cluster_arn >>
+        SERVICE_ARNS: << parameters.service_arns >>
+      name: ecs deploy many
+      command: ecs_deploy_many.py
