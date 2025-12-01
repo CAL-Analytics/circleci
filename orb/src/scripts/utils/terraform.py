@@ -49,7 +49,11 @@ def plan(properties_env: str, lang: typing.Optional[str] = None, path: typing.Op
     aws_session_env["ENV"] = properties_env
 
     # locate the tfwrapper script relative to this file
-    tfwrapper_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'bin', 'tfwrapper'))
+    # tfwrapper_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'bin', 'tfwrapper'))
+    tfwrapper_path = shutil.which('tfwrap')
+    if not tfwrapper_path:
+      loggy.info("terraform.plan(): tfwrap not available and could not be installed.")
+      return False
 
     with _chdir(_TARGET_DIR):
       loggy.info("terraform.plan(): Running tfwrapper plan")
@@ -94,7 +98,11 @@ def apply(properties_env: str, lang: typing.Optional[str] = None, path: typing.O
     aws_session_env = os.environ.copy()
     aws_session_env["ENV"] = properties_env
 
-    tfwrapper_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'bin', 'tfwrapper'))
+    # tfwrapper_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'bin', 'tfwrapper'))
+    tfwrapper_path = shutil.which('tfwrap')
+    if not tfwrapper_path:
+      loggy.info("terraform.apply(): tfwrap not available and could not be installed.")
+      return False
 
     with _chdir(_TARGET_DIR):
       loggy.info("terraform.apply(): Running tfwrapper apply")

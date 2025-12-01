@@ -13,7 +13,8 @@ steps:
   - run:
       environment:
         CICD_HOME: <<parameters.cicd_home>>
-        BIN_TFWRAPPER: <<include(scripts/bin/tfwrapper.b64)>>
+        # BIN_TFWRAPPER: <<include(scripts/bin/tfwrapper.b64)>>
+        TFWRAP_VERSION: 1.0.3
         UTILS_AWS: <<include(scripts/utils/aws.py.b64)>>
         UTILS_CDK: <<include(scripts/utils/cdk.py.b64)>>
         UTILS_COMMON: <<include(scripts/utils/common.py.b64)>>
@@ -51,7 +52,7 @@ steps:
         if [ ! -e "$CICD_HOME" ]; then mkdir $CICD_HOME; fi
         pip3 install subprocess_tee boto3 pyyaml poetry dnspython botocore[crt]
         # Bin scripts
-        echo $BIN_TFWRAPPER | base64 -d >$CICD_HOME/tfwrapper
+        # echo $BIN_TFWRAPPER | base64 -d >$CICD_HOME/tfwrapper
         # Utils
         echo $UTILS_AWS | base64 -d >$CICD_HOME/aws.py
         echo $UTILS_CDK | base64 -d >$CICD_HOME/cdk.py
@@ -95,3 +96,5 @@ steps:
         fi
         git config --global user.email "circleci@calanalytics.com"
         git config --global user.name "CircleCI Pipeline"
+        # Set up tfwrap
+        pip install tfwrap==$TFWRAP_VERSION
