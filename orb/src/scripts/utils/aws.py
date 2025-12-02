@@ -722,7 +722,7 @@ ECS Utils
 """
 
 
-def ecs_deploy_v2(clusterArn: str, serviceArn: str, tag: typing.Optional[str] = None, session: typing.Optional[AwsSession] = None, region: typing.Optional[str] = None) -> bool:
+def ecs_deploy_v2(clusterArn: str, serviceArn: str, containerName: typing.Optional[str] = None, tag: typing.Optional[str] = None, session: typing.Optional[AwsSession] = None, region: typing.Optional[str] = None) -> bool:
     """
     ecsDeploy_v2.py
 
@@ -734,6 +734,7 @@ def ecs_deploy_v2(clusterArn: str, serviceArn: str, tag: typing.Optional[str] = 
 
     clusterArn: String (Optional) Will use ECS_CLUSTER_ARN from os.environ as default
     serviceArn: String (Optional) Will use ECS_SERVICE_ARN from os.environ as default
+    containerName: String (Optional) If no containerName, we will replace ALL images in the task definition with the new tag
     tag: String (Optional) - Will use `release.get_version()` as default
     session: AwsSession (Optional) will use a different session to build the client, default is _sessions
     region: String (Optional)
@@ -775,7 +776,7 @@ def ecs_deploy_v2(clusterArn: str, serviceArn: str, tag: typing.Optional[str] = 
     before: docker.devops.rekor.io/blue/api:12345
     after: docker.devops.rekor.io/blue/api:$newVersion
     """
-    new_task_definition = ecs_set_new_image_in_task_def(task_def=current_task_definition, version=new_tag)
+    new_task_definition = ecs_set_new_image_in_task_def(task_def=current_task_definition, version=new_tag, containerName=containerName)
     loggy.info(f"ecsDeploy_v2(): New Task Definition: {str(new_task_definition)}")
 
     """
@@ -1064,7 +1065,7 @@ def ecs_get_version_param_name_from_task_def(task_def: dict) -> str:
 #     """
 
 
-def ecs_set_new_image_in_task_def(task_def: dict, version: str) -> dict:
+def ecs_set_new_image_in_task_def(task_def: dict, version: str, containerName: typing.Optional[str] = None) -> dict:
     """
     ecs_set_new_image_in_task_def()
 
@@ -1072,7 +1073,8 @@ def ecs_set_new_image_in_task_def(task_def: dict, version: str) -> dict:
 
     task_def: dict containing task definition
     version: String containiing new container tag/version
-
+    containerName: String (Optional) If no containerName, we will replace ALL images in the task definition with the new tag
+    
     Returns: dict task_def
     """
     if not task_def.get('containerDefinitions'):
@@ -1084,8 +1086,12 @@ def ecs_set_new_image_in_task_def(task_def: dict, version: str) -> dict:
             return {}
 
         _image, _original_image_version = container['image'].split(':')
-        _image = f"{_image}:{version}"
-        loggy.info(f"aws.ecs_set_new_image_in_task_def(): Changing image version ({_original_image_version}) to ({version}) for container named ({container['name']}): new image is ${_image}")
+        if containerName and container['name'] == containerName:
+            _image = f"{_image}:{version}"
+            loggy.info(f"aws.ecs_set_new_image_in_task_def(): Changing image version ({_original_image_version}) to ({version}) for container named ({container['name']}): new image is ${_image}")
+        else:
+            loggy.info(f"aws.ecs_set_new_image_in_task_def(): Keeping original image version ({_original_image_version}) for container named ({container['name']}): new image is ${_image}")
+            _image = f"{_image}:{_original_image_version}"
         container['image'] = _image
 
     return task_def

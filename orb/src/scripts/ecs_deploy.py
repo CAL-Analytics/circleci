@@ -43,7 +43,7 @@ _AWS_DEFAULT_REGION = os.environ.get('AWS_DEFAULT_REGION')
 if not _APP_NAME or not _CLUSTER_ARN or not _SERVICE_ARN or not _ENV_NAME or not _AWS_DEFAULT_REGION:
     loggy.info("ecs_deploy(): ERROR: Must set APP_NAME, CLUSTER_ARN, SERVICE_ARN, ENV_NAME and AWS_DEFAULT_REGION")
 
-if not ecs_deploy_v2(clusterArn=_CLUSTER_ARN, serviceArn=_SERVICE_ARN, tag=f"{_ENV_NAME}_rc"):
+if not ecs_deploy_v2(clusterArn=_CLUSTER_ARN, serviceArn=_SERVICE_ARN, containerName=_APP_NAME, tag=f"{_ENV_NAME}_rc"):
     sys.exit(1)
 if not ecr_tag_to_build(container=f"{_APP_NAME}:{_ENV_NAME}_rc", tag_list=[f"{_ENV_NAME}-{_AWS_DEFAULT_REGION}"]):
     exit(1)
