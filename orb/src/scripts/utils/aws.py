@@ -749,6 +749,8 @@ def ecs_deploy_v2(clusterArn: str, serviceArn: str, containerName: typing.Option
     _CLUSTER_ARN = clusterArn
     _SERVICE_ARN = serviceArn
 
+    loggy.info(f"aws.ecsDeploy_v2(): Container Name: {containerName} and tag: {_TAG}")
+
     """
     If the _CLUSTER_ARN or _SERVICE_ARN are not in ARN format, consider them SSM Param names
     and use them to grab the ARNS out of SSM Params
@@ -1077,6 +1079,7 @@ def ecs_set_new_image_in_task_def(task_def: dict, version: str, containerName: t
     
     Returns: dict task_def
     """
+    loggy.info(f"aws.ecs_set_new_image_in_task_def(): Setting new image version ({version}) for image ({containerName})")
     if not task_def.get('containerDefinitions'):
         raise Exception("aws.ecs_set_new_image_in_task_def(): containerDefinitions not found in task_def.")
 
@@ -1086,6 +1089,7 @@ def ecs_set_new_image_in_task_def(task_def: dict, version: str, containerName: t
             return {}
 
         _image, _original_image_version = container['image'].split(':')
+        loggy.info(f"aws.ecs_set_new_image_in_task_def(): Image: {_image} and original image version: {_original_image_version}")
         if containerName and containerName.lower() in _image.lower():
             _image = f"{_image}:{version}"
             loggy.info(f"aws.ecs_set_new_image_in_task_def(): Changing image version ({_original_image_version}) to ({version}) for container named ({container['name']}): new image is ${_image}")
