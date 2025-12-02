@@ -1086,7 +1086,7 @@ def ecs_set_new_image_in_task_def(task_def: dict, version: str, containerName: t
             return {}
 
         _image, _original_image_version = container['image'].split(':')
-        if containerName and container['name'] == containerName:
+        if containerName and containerName.lower() in container['name'].lower():
             _image = f"{_image}:{version}"
             loggy.info(f"aws.ecs_set_new_image_in_task_def(): Changing image version ({_original_image_version}) to ({version}) for container named ({container['name']}): new image is ${_image}")
         else:
