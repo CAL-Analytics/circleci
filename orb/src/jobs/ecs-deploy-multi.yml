@@ -24,7 +24,7 @@ parameters:
     description: "The Slack thread id for notifications."
     
 steps:
-  - ecs-deploy-many:
+  - ecs-deploy-multi:
       app_name: << parameters.app_name >>
       env_name: << parameters.env_name >>
       cluster_arn: << parameters.cluster_arn >>

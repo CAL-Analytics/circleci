@@ -27,5 +27,5 @@ steps:
         ENV_NAME: << parameters.env_name >>
         CLUSTER_ARN: << parameters.cluster_arn >>
         SERVICE_ARNS: << parameters.service_arns >>
-      name: ecs deploy many
-      command: ecs_deploy_many.py
+      name: ecs deploy multi
+      command: ecs_deploy_multi.py
