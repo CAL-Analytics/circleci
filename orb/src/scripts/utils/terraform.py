@@ -42,7 +42,7 @@ def plan(properties_env: str, lang: typing.Optional[str] = None, path: typing.Op
 
     # Ensure terraform is installed (attempt installation if possible)
     if not verify_terraform_installed():
-        loggy.info("terraform.plan(): Terraform not available and could not be installed.")
+        loggy.info("terraform.plan(): Terraform not available and could not be installed using tfenv.")
         return False
 
     aws_session_env = os.environ.copy()
@@ -92,7 +92,7 @@ def apply(properties_env: str, lang: typing.Optional[str] = None, path: typing.O
 
     # Ensure terraform is installed
     if not verify_terraform_installed():
-        loggy.info("terraform.apply(): Terraform not available and could not be installed.")
+        loggy.info("terraform.apply(): Terraform not available and could not be installed using tfenv.")
         return False
 
     aws_session_env = os.environ.copy()
@@ -135,7 +135,7 @@ def verify_terraform_installed() -> bool:
     terraform_path = shutil.which('terraform')
     if terraform_path:
       loggy.info(f"terraform.verify_terraform_installed(): Found terraform at {terraform_path}")
-      return True
+      # return True
 
     # Try to determine required version from versions.tf
     _required = None
@@ -145,38 +145,45 @@ def verify_terraform_installed() -> bool:
         _required = None
 
     # Try tfenv if present
-    if shutil.which('tfenv'):
-      try:
-        if _required:
-          # tfenv expects a specific version (strip operators if present)
-          # take first numeric-looking section from the constraint
-          m = re.search(r"([0-9]+\.[0-9]+(?:\.[0-9]+)?)", _required)
-          ver = m.group(1) if m else None
-          if ver:
-            subprocess.run(['tfenv', 'install', ver], check=True)
-            subprocess.run(['tfenv', 'use', ver], check=True)
-        else:
-          subprocess.run(['tfenv', 'install', 'latest'], check=True)
-        # verify
-        terraform_path = shutil.which('terraform')
-        return bool(terraform_path)
-      except Exception:
-        loggy.info("terraform.verify_terraform_installed(): tfenv failed to install terraform")
+    if not shutil.which('tfenv'):
+      # install tfenv from git
+      subprocess.run(['git', 'clone', '--depth=1', 'https://github.com/tfutils/tfenv.git', '~/.tfenv'], check=True)
+      subprocess.run(['sudo', 'ln', '-s', '~/.tfenv/bin/*', '/usr/local/bin'], check=True)
 
-    # Try common package managers (best-effort)
     try:
-      if shutil.which('apt'):
-        subprocess.run(['sudo', 'apt', 'update'], check=True)
-        subprocess.run(['sudo', 'apt', 'install', '-y', 'terraform'], check=True)
-      elif shutil.which('brew'):
-        subprocess.run(['brew', 'install', 'terraform'], check=True)
-      elif shutil.which('yum'):
-        subprocess.run(['sudo', 'yum', 'install', '-y', 'terraform'], check=True)
-    except Exception:
-      loggy.info("terraform.verify_terraform_installed(): package manager installation attempt failed")
+      if _required:
+        # tfenv expects a specific version (strip operators if present)
+        # take first numeric-looking section from the constraint
+        m = re.search(r"([0-9]+\.[0-9]+(?:\.[0-9]+)?)", _required)
+        ver = m.group(1) if m else None
+        if ver:
+          subprocess.run(['tfenv', 'install', ver], check=True)
+          subprocess.run(['tfenv', 'use', ver], check=True)
+      else:
+        subprocess.run(['tfenv', 'install', 'latest'], check=True)
+        subprocess.run(['tfenv', 'use', 'latest'], check=True)
 
-    terraform_path = shutil.which('terraform')
-    return bool(terraform_path)
+      # verify
+      terraform_path = shutil.which('terraform')
+      return bool(terraform_path)
+    except Exception:
+      loggy.info("terraform.verify_terraform_installed(): tfenv failed to install terraform")
+
+    return False
+
+    # # Try common package managers (best-effort)
+    # try:
+    #   if shutil.which('apt'):
+    #     subprocess.run(['sudo', 'apt', 'update'], check=True)
+    #     subprocess.run(['sudo', 'apt', 'install', '-y', 'terraform'], check=True)
+    #   elif shutil.which('brew'):
+    #     subprocess.run(['brew', 'install', 'terraform'], check=True)
+    #   elif shutil.which('yum'):
+    #     subprocess.run(['sudo', 'yum', 'install', '-y', 'terraform'], check=True)
+    # except Exception:
+    #   loggy.info("terraform.verify_terraform_installed(): package manager installation attempt failed")
+    # terraform_path = shutil.which('terraform')
+    # return bool(terraform_path)
 
 def get_terraform_installed_version() -> str:
     """
