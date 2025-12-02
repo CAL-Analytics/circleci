@@ -48,10 +48,11 @@ steps:
       name: set up python environment
       # shell: /bin/bash +x
       command: |
-        if [ -e "$CICD_HOME/aws.py" ]; then echo "unfurly/cicd already set up."; exit 0; fi
-        echo "Setting up unfurly/cicd in $CICD_HOME"
+        if [ -e "$CICD_HOME/aws.py" ]; then echo "cicd already set up."; exit 0; fi
+        echo "Setting up cicd in $CICD_HOME"
         if [ ! -e "$CICD_HOME" ]; then mkdir $CICD_HOME; fi
-        pip3 install subprocess_tee boto3 pyyaml poetry dnspython botocore[crt]
+        # Install pips for the cicd environment
+        pip3 install subprocess_tee boto3 pyyaml poetry dnspython botocore[crt] tfwrap==$TFWRAP_VERSION
         # Bin scripts
         # echo $BIN_TFWRAPPER | base64 -d >$CICD_HOME/tfwrapper
         # Utils
@@ -98,5 +99,3 @@ steps:
         fi
         git config --global user.email "circleci@calanalytics.com"
         git config --global user.name "CircleCI Pipeline"
-        # Set up tfwrap
-        pip install tfwrap==$TFWRAP_VERSION

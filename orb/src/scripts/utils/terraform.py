@@ -147,8 +147,10 @@ def verify_terraform_installed() -> bool:
     # Try tfenv if present
     if not shutil.which('tfenv'):
       # install tfenv from git
-      subprocess.run(['git', 'clone', '--depth=1', 'https://github.com/tfutils/tfenv.git', '~/.tfenv'], check=True)
-      subprocess.run(['sudo', 'ln', '-s', '~/.tfenv/bin/*', '/usr/local/bin'], check=True)
+      CICD_HOME = os.environ.get('CICD_HOME', '/tmp')
+      subprocess.run(['git', 'clone', '--depth=1', 'https://github.com/tfutils/tfenv.git', f'{CICD_HOME}/.tfenv'], check=True)
+      subprocess.run(['sudo', 'ln', '-s', f'{CICD_HOME}/.tfenv/bin/tfenv', '/usr/local/bin/tfenv'], check=True)
+      subprocess.run(['sudo', 'ln', '-s', f'{CICD_HOME}/.tfenv/bin/terraform', '/usr/local/bin/terraform'], check=True)
 
     try:
       if _required:
@@ -226,8 +228,8 @@ def get_terraform_required_version() -> str:
                 _TF_REQUIRED = m.group(1).strip()
         except Exception:
             _TF_REQUIRED = None
-    if not _TF_REQUIRED:
-        _TF_REQUIRED = get_terraform_installed_version()
+    # if not _TF_REQUIRED:
+    #     _TF_REQUIRED = get_terraform_installed_version()
 
     loggy.info("terraform.get_terraform_required_version(): END")
     return _TF_REQUIRED

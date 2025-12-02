@@ -121,7 +121,7 @@ def add_bash_exports_to_env(file: typing.Optional[str] = None) -> bool:
     if not file:
         file = os.environ.get('BASH_ENV')
 
-    if os.path.exists(file):
+    if file and os.path.exists(file):
         if os.stat(file).st_size != 0:
             with open(file, 'r') as _BASH_ENV:
                 for _line in _BASH_ENV.readlines():
