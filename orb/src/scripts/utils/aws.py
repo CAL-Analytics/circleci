@@ -739,7 +739,9 @@ def ecr_tag_exists(container: str, tag: str, session: typing.Optional[AwsSession
 
     for image in response['imageIds']:
         if 'imageTag' in image and tag in image['imageTag']:
+            loggy.info(f"aws.ecr_tag_exists(): Found tag {image['imageTag']} for {container}")
             return True, image['imageTag']
+    loggy.info(f"aws.ecr_tag_exists(): No tag {tag} found for {container}")
     return False, None
 
 

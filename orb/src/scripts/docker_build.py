@@ -138,9 +138,10 @@ if _DOCKER_BUILD_ENV_APPEND:
 
 # Don't build, just retag the image if the commit hash has already been built for this image
 _COMMIT_HASH = release.get_commit_short_hash()
-if aws.ecr_tag_exists(_ECR_FQDN, _COMMIT_HASH):
-    loggy.info("docker_build(): Commit hash has already been built for this image. Tagging with the env.")
-    aws.ecr_tag_to_build(container=f"{_ECR_FQDN}:{_COMMIT_HASH}", tag_list=[f"{_ENV_NAME}_rc", f"{_ENV_NAME}_blue_rc", f"{_ENV_NAME}_green_rc"])
+tag_exists, tag_hash = aws.ecr_tag_exists(_ECR_FQDN, _COMMIT_HASH)
+if tag_exists:
+    loggy.info(f"docker_build(): Commit hash has already been built for this image. Tagging with the env. {tag_hash}")
+    aws.ecr_tag_to_build(container=f"{_ECR_FQDN}:{tag_hash}", tag_list=[f"{_ENV_NAME}_rc", f"{_ENV_NAME}_blue_rc", f"{_ENV_NAME}_green_rc"])
     sys.exit(0)
 
 #
