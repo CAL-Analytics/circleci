@@ -716,6 +716,32 @@ def ecr_tag(container: str, tag: str, session: typing.Optional[AwsSession] = Non
     return True
 
 
+def ecr_tag_exists(container: str, tag: str, session: typing.Optional[AwsSession] = None, region: typing.Optional[str] = None) -> [bool, str]:
+    """
+    ecr_tag_exists()
+
+    Check if a tag exists for a container
+
+    container: String containing existing remote container: e.g. "container" or "575815261832.dkr.ecr.us-east-1.amazonaws.com/mirrored/container"
+    tag: String containing tag to check for: e.g. "latest" or "1234"
+
+    Returns: True/False and the full image tag if it exists
+
+    """
+    _s = init_session() if session is None else session
+    _r = ecr_get_region(_s) if region is None else region
+
+    loggy.info(f"aws.ecr_tag_exists(): BEGIN (using session named: {_s.name})")
+
+    loggy.info(f"aws.ecr_tag_exists(): Checking if {container} has tag {tag}")
+    client = _s.session.client('ecr', region_name=_r)
+    response = client.list_images(registryId=ecr_get_account_id(_s), repositoryName=ecr_strip_container_name(container))
+
+    for image in response['imageDetails']:
+        if 'imageTag' in image and tag in image['imageTag']:
+            return True, image['imageTag']
+    return False, None
+
 
 """
 ECS Utils

@@ -29,6 +29,13 @@ if not _PIPELINE_TRIGGER_TOKEN:
 _TRIGGER_PIPELINES = os.environ.get('TRIGGER_PIPELINES')
 _DONT_TRIGGER_PIPELINES = os.environ.get('DONT_TRIGGER_PIPELINES')
 
+# We can convert our git tag to pipeline names by removing the 'deploy/' prefix
+if _TRIGGER_PIPELINES:
+    _TRIGGER_PIPELINES = _TRIGGER_PIPELINES.replace('deploy/', '')
+
+if _DONT_TRIGGER_PIPELINES:
+    _DONT_TRIGGER_PIPELINES = _DONT_TRIGGER_PIPELINES.replace('deploy/', '')
+
 #
 # If this is blank, we set repo_type to circleci, otherwise, bitbucket
 #

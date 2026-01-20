@@ -30,7 +30,12 @@ _BUILD_VERSION = release.get_version()
 # 
 # Let's mock up our ENV_NAME so that it aligns with our CDK application model
 #
-_ENV_NAME = os.environ.get('ENV_NAME').replace('.', '-')
+
+# We can convert our git tag to an ENV_NAME by removing the 'deploy/' prefix and replacing '.' with '-'
+_ENV_NAME = os.environ.get('ENV_NAME')
+if _ENV_NAME:
+    _ENV_NAME = _ENV_NAME.replace('deploy/', '').replace('.', '-')
+
 _APP_NAME = os.environ.get('APP_NAME')
 _DOCKERFILE_PATH = common.get_environ('DOCKERFILE_PATH', ".")
 loggy.info(f"docker_build(): Setting _DOCKERFILE_PATH to {_DOCKERFILE_PATH}")
@@ -130,6 +135,13 @@ if _DOCKER_BUILD_ENV_APPEND:
 
 # loggy.info("pipeline: *** SonarQube Code Scanning ***")
 # sonarqube.scan()
+
+# Don't build, just retag the image if the commit hash has already been built for this image
+_COMMIT_HASH = release.get_commit_short_hash()
+if aws.ecr_tag_exists(_ECR_FQDN, _COMMIT_HASH):
+    loggy.info("docker_build(): Commit hash has already been built for this image. Tagging with the env.")
+    aws.ecr_tag_to_build(container=f"{_ECR_FQDN}:{_COMMIT_HASH}", tag_list=[f"{_ENV_NAME}_rc", f"{_ENV_NAME}_blue_rc", f"{_ENV_NAME}_green_rc"])
+    sys.exit(0)
 
 #
 # Moved the ecr login in case the Dockerfile we are building uses a FROM pulling an image from our ECR
