@@ -737,7 +737,7 @@ def ecr_tag_exists(container: str, tag: str, session: typing.Optional[AwsSession
     client = _s.session.client('ecr', region_name=_r)
     response = client.list_images(registryId=ecr_get_account_id(_s), repositoryName=ecr_strip_container_name(container))
 
-    for image in response['imageDetails']:
+    for image in response['imageIds']:
         if 'imageTag' in image and tag in image['imageTag']:
             return True, image['imageTag']
     return False, None
