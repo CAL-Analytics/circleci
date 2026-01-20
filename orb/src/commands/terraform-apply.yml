@@ -15,8 +15,6 @@ parameters:
     description: "Poetry install command. Defaults to: poetry install"
 
 steps:
-  - checkout
-  - setup_remote_docker
   - set-up-cicd-env
   - run:
       environment:

@@ -15,7 +15,6 @@ parameters:
     description: "Poetry install command. Defaults to: poetry install"
 
 steps:
-  - checkout
   - set-up-cicd-env
   - run:
       environment:
@@ -25,5 +24,5 @@ steps:
       name: Terraform plan
       # shell: /bin/xonsh -i
       command: terraform_plan.py
-  - store_artifacts:
-      path: cdk.diff.html
+  # - store_artifacts:
+  #     path: cdk.diff.html
