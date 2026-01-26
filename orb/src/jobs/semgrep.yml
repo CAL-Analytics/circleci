@@ -16,6 +16,13 @@ steps:
   - semgrep:
       semgrep_exclude_rules: << parameters.semgrep_exclude_rules >>
 
+  - jira/notify:
+      environment: semgrep
+      environment_type: development
+      job_type: build
+      pipeline_id: << pipeline.id >>
+      pipeline_number: "<< pipeline.number >>"
+
   # - slack-notify:
   #     event: fail
   #     custom_message: "Failed :fire:"

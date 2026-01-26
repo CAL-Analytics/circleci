@@ -10,3 +10,4 @@ display:
 orbs:
   trigger-pipeline: trustedshops-public/trigger-pipeline@2.0.0
   slack: circleci/slack@5.1.1
+  jira: circleci/jira@2.2.0
