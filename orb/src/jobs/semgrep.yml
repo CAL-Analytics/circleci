@@ -42,13 +42,18 @@ steps:
   - semgrep:
       semgrep_exclude_rules: << parameters.semgrep_exclude_rules >>
 
-  - jira/notify:
-      environment: << parameters.jira_environment >>
-      environment_type: << parameters.jira_environment_type >>
-      job_type: << parameters.jira_job_type >>
-      service_id: "<< parameters.jira_service_id >>"
-      pipeline_id: "<< parameters.jira_pipeline_id >>"
-      pipeline_number: << parameters.jira_pipeline_number >>
+  - when:
+      condition:
+        not: 
+          equal: [ 0, << parameters.jira_pipeline_number >> ]
+      steps:
+        - jira/notify:
+            environment: << parameters.jira_environment >>
+            environment_type: << parameters.jira_environment_type >>
+            job_type: << parameters.jira_job_type >>
+            service_id: "<< parameters.jira_service_id >>"
+            pipeline_id: "<< parameters.jira_pipeline_id >>"
+            pipeline_number: << parameters.jira_pipeline_number >>
 
   # - slack-notify:
   #     event: fail

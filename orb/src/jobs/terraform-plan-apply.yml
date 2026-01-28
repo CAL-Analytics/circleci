@@ -26,7 +26,33 @@ parameters:
     type: string
     default: "thready"
     description: "The Slack thread id for notifications."
-    
+  jira_environment:
+    type: string
+    default: "terraform-plan-apply"
+    description: "Jira environment to notify. development, staging, production"
+  jira_environment_type:
+    type: enum
+    enum: ["development", "testing", "staging", "production", "unmapped"]
+    default: "development"
+    description: "Jira environment type to notify. development, staging, production"
+  jira_job_type:
+    type: enum
+    enum: ["build", "deployment"]
+    default: "build"
+    description: "Jira job type to notify. build, deployment"
+  jira_service_id:
+    type: string
+    default: "11600"
+    description: "Jira service id to notify. 11600 for pt-terrain-elevation"
+  jira_pipeline_id:
+    type: string
+    default: "terraform-plan-apply"
+    description: "CircleCI pipeline id. What to name the pipeline in Jira."
+  jira_pipeline_number:
+    type: integer
+    default: 0
+    description: "CircleCI pipeline number."    
+
 steps:
   - checkout
   - when:
@@ -42,6 +68,18 @@ steps:
       tf_env: << parameters.tf_env >>
       poetry_path: << parameters.poetry_path >>
       poetry_install_cmd: << parameters.poetry_install_cmd >>
+  - when:
+      condition:
+        not: 
+          equal: [ 0, << parameters.jira_pipeline_number >> ]
+      steps:
+        - jira/notify:
+            environment: << parameters.jira_environment >>
+            environment_type: << parameters.jira_environment_type >>
+            job_type: << parameters.jira_job_type >>
+            service_id: "<< parameters.jira_service_id >>"
+            pipeline_id: "<< parameters.jira_pipeline_id >>"
+            pipeline_number: << parameters.jira_pipeline_number >>
   # - slack-notify:
   #     event: fail
   #     custom_message: "Failed :fire:"
