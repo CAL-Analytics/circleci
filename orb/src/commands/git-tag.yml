@@ -5,6 +5,10 @@ parameters:
   tag:
     type: string
     description: "Tag to add to the current git commit. i.e. v1.0.0"
+  delete_tag:
+    type: string
+    default: ""
+    description: "(Optional) Tag to delete if it exists. i.e. v1.0.0"
 
 steps:
   - checkout
@@ -12,6 +16,7 @@ steps:
   - run:
       environment:
         TAG: << parameters.tag >>
+        DELETE_TAG: << parameters.delete_tag >>
       name: git tag
       # shell: /bin/xonsh -i
       command: git_tag.py

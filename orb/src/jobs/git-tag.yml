@@ -9,6 +9,10 @@ parameters:
   tag:
     type: string
     description: "Tag to add to the current git commit. i.e. v1.0.0"
+  delete_tag:
+    type: string
+    default: ""
+    description: "(Optional) Tag to delete if it exists. i.e. v1.0.0"
   next_env_branch_name:
     type: string
     description: "Destination branch name. i.e. uat"
@@ -36,6 +40,7 @@ parameters:
 steps:
   - git-tag:
       tag: << parameters.tag >>
+      delete_tag: << parameters.delete_tag >>
   - when:
       condition: << parameters.trigger_pipelines >>
       steps:
