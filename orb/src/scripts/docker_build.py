@@ -34,7 +34,8 @@ _BUILD_VERSION = release.get_version()
 # We can convert our git tag to an ENV_NAME by removing the 'deploy/' prefix and replacing '.' with '-'
 _ENV_NAME = os.environ.get('ENV_NAME')
 if _ENV_NAME:
-    _ENV_NAME = _ENV_NAME.replace('deploy/', '').replace('.', '-')
+    # If it has a deploy/ prefix, or _rc aleady, we remove them
+    _ENV_NAME = _ENV_NAME.replace('deploy/', '').replace('.', '-').replace('_rc', '')
 
 _APP_NAME = os.environ.get('APP_NAME')
 _DOCKERFILE_PATH = common.get_environ('DOCKERFILE_PATH', ".")
