@@ -43,6 +43,8 @@ steps:
         ECR_PROMOTE: <<include(scripts/ecr_promote.py.b64)>>
         GIT_CHANGES: <<include(scripts/git_changes.py.b64)>>
         GIT_PROMOTE: <<include(scripts/git_promote.py.b64)>>
+        GIT_TAG: <<include(scripts/git_tag.py.b64)>>
+        GIT_TAG_VERSION: <<include(scripts/git_tag_version.py.b64)>>
         TRIGGER_PIPELINES: <<include(scripts/trigger_pipelines.py.b64)>>
         YARN_BUILD: <<include(scripts/yarn_build.py.b64)>>
       name: set up python environment
@@ -52,7 +54,7 @@ steps:
         echo "Setting up cicd in $CICD_HOME"
         if [ ! -e "$CICD_HOME" ]; then mkdir $CICD_HOME; fi
         # Install pips for the cicd environment
-        pip3 install subprocess_tee boto3 pyyaml poetry dnspython botocore[crt] tfwrap==$TFWRAP_VERSION
+        pip3 install toml toml-cli subprocess_tee boto3 pyyaml poetry dnspython botocore[crt] tfwrap==$TFWRAP_VERSION
         # Bin scripts
         # echo $BIN_TFWRAPPER | base64 -d >$CICD_HOME/tfwrapper
         # Utils
@@ -85,6 +87,8 @@ steps:
         echo $ECS_DEPLOY_MULTI | base64 -d >$CICD_HOME/ecs_deploy_multi.py
         echo $GIT_CHANGES | base64 -d >$CICD_HOME/git_changes.py
         echo $GIT_PROMOTE | base64 -d >$CICD_HOME/git_promote.py
+        echo $GIT_TAG | base64 -d >$CICD_HOME/git_tag.py
+        echo $GIT_TAG_VERSION | base64 -d >$CICD_HOME/git_tag_version.py
         echo $TRIGGER_PIPELINES | base64 -d >$CICD_HOME/trigger_pipelines.py
         echo $YARN_BUILD | base64 -d >$CICD_HOME/yarn_build.py
         chmod 755 $CICD_HOME/*.py

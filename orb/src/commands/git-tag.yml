@@ -1,0 +1,17 @@
+description: >
+  This command add a tag to the current git commit.
+
+parameters:
+  tag:
+    type: string
+    description: "Tag to add to the current git commit. i.e. v1.0.0"
+
+steps:
+  - checkout
+  - set-up-cicd-env
+  - run:
+      environment:
+        TAG: << parameters.tag >>
+      name: git tag
+      # shell: /bin/xonsh -i
+      command: git_tag.py

@@ -1,0 +1,21 @@
+description: >
+  This command tags a version of the code using the pyproject.toml file for poetry or package.json for node.
+
+parameters:
+  tool:
+    type: string
+    description: "Tool to use to tag the version. i.e. poetry or node"
+  prefix:
+    type: string
+    description: "Prefix to add to the version. i.e. v for version. i.e. v1.0.0"
+
+steps:
+  - checkout
+  - set-up-cicd-env
+  - run:
+      environment:
+        TOOL: << parameters.tool >>
+        PREFIX: << parameters.prefix >>
+      name: git tag version
+      # shell: /bin/xonsh -i
+      command: git_tag_version.py
