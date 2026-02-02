@@ -55,7 +55,9 @@ steps:
       env_name: << parameters.env_name >>
       cluster_arn: << parameters.cluster_arn >>
       service_arn: << parameters.service_arn >>
-
+  - git-tag:
+      tag: deploy/<< parameters.env_name >>
+      delete_tag: deploy/<< parameters.env_name >>_rc
   - when:
       condition:
         not: 

@@ -50,7 +50,7 @@ steps:
       env_tag: << parameters.env_tag >>
       next_env_tag: << parameters.next_env_tag >>
   - git-tag:
-      tag: << parameters.next_env_tag >>
+      tag: deploy/<< parameters.next_env_tag >>
   - when:
       condition:
         and: [ <<parameters.env_branch_name>>, <<parameters.next_env_branch_name>> ]
