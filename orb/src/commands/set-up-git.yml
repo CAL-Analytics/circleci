@@ -1,0 +1,19 @@
+description: >
+  This command sets up the correct git config for the pipeline so we can tag and push. We only need to do this once per pipeline.
+
+steps:
+  - run:
+      name: set up git config
+      # shell: /bin/bash +x
+      command: |
+        # Set up Bitbucket SSH keys for promotions and things
+        if [ ! -z "$BITBUCKET_SSH_KEYS" ]; then
+          echo "BITBUCKET_SSH_KEYS is set, configuring git"
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          echo "$BITBUCKET_SSH_KEYS" | base64 -d >~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-add -D && ssh-add ~/.ssh/id_ed25519
+        fi
+        # We need to set up the user.email as an existing user or we get charged for a new user.
+        git config --global user.email "t.welch@calanalytics.com"
+        git config --global user.name "CircleCI Pipeline"

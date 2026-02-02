@@ -1,0 +1,11 @@
+description: >
+  This job sets up the correct git config for the pipeline so we can tag and push. We only need to do this once per pipeline.
+
+executor: default
+
+resource_class: small
+
+steps:
+  - checkout
+  - set-up-git
+
