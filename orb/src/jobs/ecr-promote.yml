@@ -49,6 +49,8 @@ steps:
       app_name: << parameters.app_name >>
       env_tag: << parameters.env_tag >>
       next_env_tag: << parameters.next_env_tag >>
+  - git-tag:
+      tag: << parameters.next_env_tag >>
   - when:
       condition:
         and: [ <<parameters.env_branch_name>>, <<parameters.next_env_branch_name>> ]
