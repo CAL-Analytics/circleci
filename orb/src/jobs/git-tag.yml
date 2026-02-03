@@ -15,6 +15,7 @@ parameters:
     description: "(Optional) Tag to delete if it exists. i.e. v1.0.0"
   next_env_branch_name:
     type: string
+    default: ""
     description: "Destination branch name. i.e. uat"
   trigger_pipelines:
     type: string

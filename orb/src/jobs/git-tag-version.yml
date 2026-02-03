@@ -14,6 +14,7 @@ parameters:
     description: "Prefix to add to the version. i.e. v for version. i.e. v1.0.0"
   next_env_branch_name:
     type: string
+    default: ""
     description: "Destination branch name. i.e. uat"
   trigger_pipelines:
     type: string
