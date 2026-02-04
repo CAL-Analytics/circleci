@@ -30,9 +30,9 @@ if not _TAG:
     loggy.info("git_tag(): ERROR: Must set TAG")
     sys.exit(1)
 
-# Add the tag to the current commit
+# Add the tag to the current commit, we add the -f flag to force the tag to be added even if it already exists
 _run(f"git tag -a '{_TAG}' -m 'CircleCI Promoting to {_TAG}' -f", check=True, shell=True)
-_run(f"git push origin '{_TAG}'", check=True, shell=True)
+_run(f"git push origin '{_TAG}' -f", check=True, shell=True)
 
 # If DELETE_TAG is set, delete the tag if it exists
 if _DELETE_TAG:

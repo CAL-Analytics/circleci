@@ -57,7 +57,7 @@ if _TOOL == 'poetry':
         _VERSION = f"{_PREFIX}{_VERSION}"
     loggy.info(f"git_tag_version(): Tagging version as {_VERSION}")
     _run(f"git tag -a '{_VERSION}' -m 'CircleCI Tagging Version {_VERSION}' -f", check=True, shell=True)
-    _run(f"git push origin '{_VERSION}'", check=True, shell=True)
+    _run(f"git push origin '{_VERSION}' -f", check=True, shell=True)
 
 else:
     loggy.info("git_tag_version(): ERROR: Must set TOOL (poetry for now, node coming soon)")
