@@ -51,6 +51,8 @@ steps:
       next_env_tag: << parameters.next_env_tag >>
   - git-tag:
       tag: deploy/<< parameters.next_env_tag >>
+      run_checkout: false
+      run_set_up_cicd_env: false
   - when:
       condition:
         and: [ <<parameters.env_branch_name>>, <<parameters.next_env_branch_name>> ]

@@ -58,6 +58,8 @@ steps:
   - git-tag:
       tag: deploy/<< parameters.env_name >>
       delete_tag: deploy/<< parameters.env_name >>_rc
+      run_checkout: false
+      run_set_up_cicd_env: false
   - when:
       condition:
         not: 

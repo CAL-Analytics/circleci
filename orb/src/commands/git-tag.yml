@@ -9,10 +9,24 @@ parameters:
     type: string
     default: ""
     description: "(Optional) Tag to delete if it exists. i.e. v1.0.0"
+  run_checkout:
+    type: boolean
+    default: true
+    description: "Whether to run the checkout step."
+  run_set_up_cicd_env:
+    type: boolean
+    default: true
+    description: "Whether to run the set up cicd env step."
 
 steps:
-  - checkout
-  - set-up-cicd-env
+  - when:
+      condition: << parameters.run_checkout >>
+      steps:
+        - checkout
+  - when:
+      condition: << parameters.run_set_up_cicd_env >>
+      steps:
+        - set-up-cicd-env
   - run:
       environment:
         TAG: << parameters.tag >>
