@@ -33,11 +33,14 @@ steps:
          role_session_name: "CircleCI-${CIRCLE_BUILD_NUM}"
       - run:
           name: Create manifest
+          environment:
+            APP_NAME: << parameters.app_name >>
+            ENV_NAME: << parameters.env_name >>
           command: |
             export ECR_REGISTRY=${ECR_ACCOUNT_ID}.dkr.ecr.${ECR_ACCOUNT_REGION}.amazonaws.com
-            export REPO_SLUG=<< parameters.app_name >>
+            export REPO_SLUG=${APP_NAME}
             # Remove deploy/ and _rc from the env_name
-            export ENV_NAME_FULL=<< parameters.env_name >>
+            export ENV_NAME_FULL=${ENV_NAME}
             export ENV_NAME=${ENV_NAME_FULL#deploy/}
             export ENV_NAME=${ENV_NAME%_rc}
             aws --profile circleci ecr get-login-password --region ${ECR_ACCOUNT_REGION} | docker login --username AWS --password-stdin $ECR_REGISTRY
