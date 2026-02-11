@@ -59,6 +59,11 @@ steps:
                 continue
               fi
 
+              #
+              # remove the v prefix from a semver tag (i.e v1.2.3 --> 1.2.3)
+              #
+              TAG=$([[ $TAG =~ ^v[0-9] ]] && echo "${TAG#v}" || echo "$TAG")
+
               docker manifest create $ECR_REGISTRY/$REPO_SLUG:${TAG} $ECR_REGISTRY/$REPO_SLUG:${ENV_NAME}_aarch64_rc $ECR_REGISTRY/$REPO_SLUG:${ENV_NAME}_x86_64_rc
               docker manifest annotate $ECR_REGISTRY/$REPO_SLUG:${TAG} $ECR_REGISTRY/$REPO_SLUG:${ENV_NAME}_aarch64_rc --os linux --arch arm64
               docker manifest annotate $ECR_REGISTRY/$REPO_SLUG:${TAG} $ECR_REGISTRY/$REPO_SLUG:${ENV_NAME}_x86_64_rc --os linux --arch amd64
