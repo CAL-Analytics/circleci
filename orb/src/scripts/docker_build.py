@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-cdk_diff
+docker_build
 
-Run a cdk diff
+Run a docker build
 
 """
 import os
@@ -12,7 +12,6 @@ sys.path.insert(0, '/home/circleci/bin')
 
 import loggy
 import common
-import cdk
 import aws
 import release
 import docker

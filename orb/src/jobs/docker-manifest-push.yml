@@ -1,0 +1,67 @@
+description: >
+  This job creates and pushes a docker manifest.
+
+executor: 
+  name: default
+  # tag: << parameters.executor_tag >>
+
+resource_class: << parameters.resource_class >>
+
+parameters:
+  # executor_tag:
+  #   type: string
+  #   default: "2024.03"
+  #   description: "Container arch to build. Using cimg/aws by default now. resource class can be set to define arch"
+  resource_class:
+    type: string
+    default: arm.medium
+    description: "Resource class to use for this task. arm.medium is default"
+  app_name:
+    type: string
+    description: "Application name as defined in CDK stack properties file."
+  env_name:
+    type: string
+    default: "dev"
+    description: "Environment name to deploy. We use this as part of our container Tag."
+
+steps:
+      - checkout
+      - aws-cli/setup:
+         role_arn: ${AWS_ROLE_ARN}
+         region: ${AWS_DEFAULT_REGION}
+         profile_name: "circleci"
+         role_session_name: "CircleCI-${CIRCLE_BUILD_NUM}"
+      - run:
+          name: Create manifest
+          command: |
+            export ECR_REGISTRY=${ECR_ACCOUNT_ID}.dkr.ecr.${ECR_ACCOUNT_REGION}.amazonaws.com
+            export REPO_SLUG=<< parameters.app_name >>
+            # Remove deploy/ and _rc from the env_name
+            export ENV_NAME_FULL=<< parameters.env_name >>
+            export ENV_NAME=${ENV_NAME_FULL#deploy/}
+            export ENV_NAME=${ENV_NAME%_rc}
+            aws --profile circleci ecr get-login-password --region ${ECR_ACCOUNT_REGION} | docker login --username AWS --password-stdin $ECR_REGISTRY
+
+            #
+            # Create and push a manifest for each tag in the commit, ensuring we modify the deploy/ tag to ENV_NAME_rc
+            #
+            mapfile -t TAG_LIST < <(git tag --points-at $(git log --oneline -n 1 | awk '{print $1}'))
+
+            for TAG in "${TAG_LIST[@]}"; do
+              if [ "$TAG" == "$ENV_NAME_FULL"]; then TAG=${ENV_NAME}_rc; fi
+
+              # skip any other tags containing slash, as these are not valid ECR tags
+              if [[ "$TAG" == */* ]]; then
+                echo "Skipping tag with slash: $TAG"
+                continue
+              fi
+
+              docker manifest create $ECR_REGISTRY/$REPO_SLUG:${TAG} $ECR_REGISTRY/$REPO_SLUG:${ENV_NAME}_aarch64_rc $ECR_REGISTRY/$REPO_SLUG:${ENV_NAME}_x86_64_rc
+              docker manifest annotate $ECR_REGISTRY/$REPO_SLUG:${TAG} $ECR_REGISTRY/$REPO_SLUG:${ENV_NAME}_aarch64_rc --os linux --arch arm64
+              docker manifest annotate $ECR_REGISTRY/$REPO_SLUG:${TAG} $ECR_REGISTRY/$REPO_SLUG:${ENV_NAME}_x86_64_rc --os linux --arch amd64
+              docker manifest push $ECR_REGISTRY/$REPO_SLUG:${TAG}
+            done
+
+
+
+
