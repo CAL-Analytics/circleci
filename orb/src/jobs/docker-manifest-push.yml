@@ -51,7 +51,7 @@ steps:
             mapfile -t TAG_LIST < <(git tag --points-at $(git log --oneline -n 1 | awk '{print $1}'))
 
             for TAG in "${TAG_LIST[@]}"; do
-              if [ "$TAG" == "$ENV_NAME_FULL"]; then TAG=${ENV_NAME}_rc; fi
+              if [ "$TAG" == "$ENV_NAME_FULL" ]; then TAG=${ENV_NAME}_rc; fi
 
               # skip any other tags containing slash, as these are not valid ECR tags
               if [[ "$TAG" == */* ]]; then
