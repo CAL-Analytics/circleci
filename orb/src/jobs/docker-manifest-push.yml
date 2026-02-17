@@ -50,6 +50,11 @@ steps:
             #
             mapfile -t TAG_LIST < <(git tag --points-at $(git log --oneline -n 1 | awk '{print $1}'))
 
+            # 
+            # Add the git commit hash to the TAG_LIST array
+            #
+            TAG_LIST+=($(git rev-parse --short HEAD))
+
             for TAG in "${TAG_LIST[@]}"; do
               if [ "$TAG" == "$ENV_NAME_FULL" ]; then TAG=${ENV_NAME}_rc; fi
 
