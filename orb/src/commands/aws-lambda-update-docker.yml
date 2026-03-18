@@ -11,6 +11,10 @@ parameters:
   tag:
     type: string
     description: "The docker tag to deploy."
+  dont_tag:
+    type: string
+    default: "false"
+    description: "Don't tag the container with the tag."
 
 steps:
   - set-up-cicd-env
@@ -19,6 +23,7 @@ steps:
         FUNCTION_ARN: <<parameters.function_arn>>
         APP_NAME: <<parameters.app_name>>
         TAG: <<parameters.tag>>
+        DONT_TAG: <<parameters.dont_tag>>
       name: lambda update docker
       # shell: /bin/xonsh -i
       command: aws_lambda_update_docker.py

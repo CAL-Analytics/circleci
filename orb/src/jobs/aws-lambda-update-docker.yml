@@ -15,6 +15,10 @@ parameters:
   tag:
     type: string
     description: "The docker tag to deploy."
+  dont_tag:
+    type: string
+    default: "false"
+    description: "Don't tag the container with the tag."
   slack_thread_id:
     type: string
     default: "thready"
@@ -25,6 +29,7 @@ steps:
       function_arn: << parameters.function_arn >>
       app_name: << parameters.app_name >>
       tag: << parameters.tag >>
+      dont_tag: << parameters.dont_tag >>
   # - slack-notify:
   #     event: fail
   #     custom_message: "Failed :fire:"
