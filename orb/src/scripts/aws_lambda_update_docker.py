@@ -25,6 +25,7 @@ _FUNCTION_ARN = os.environ.get('FUNCTION_ARN')
 _APP_NAME = os.environ.get('APP_NAME')
 _TAG = os.environ.get('TAG')
 _DONT_TAG = os.environ.get('DONT_TAG', 'false').lower() == 'true'
+_AWS_DEFAULT_REGION = os.environ.get('AWS_DEFAULT_REGION')
 
 if not _FUNCTION_ARN or not _APP_NAME or not _TAG:
     loggy.info("aws_lambda_update_docker(): Must set parameters for function_arn, app_name and tag.")
@@ -50,7 +51,8 @@ if not lambda_update_docker(function_name=_FUNCTION_ARN, image_uri=f"{_IMAGE_URI
 # Tag the container as being released, we just chop off the _rc postfix for the final tag.
 #
 if not _DONT_TAG:
-    if not ecr_tag(container=f"{_IMAGE_URI}:{_TAG}", tag=_TAG.split('_rc')[0]):
+    _NEW_TAG = f"{_TAG.split('_rc')[0]}-{_AWS_DEFAULT_REGION}"
+    if not ecr_tag(container=f"{_IMAGE_URI}:{_TAG}", tag=_NEW_TAG):
         loggy.info("aws_lambda_update_docker(): Failed to tag container with cdk tag (no _rc).")
         sys.exit(1)
 
