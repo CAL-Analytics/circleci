@@ -1213,7 +1213,7 @@ def ecs_deploy_new_task_definition(cluster: str, service: str, task_def_arn: str
         client.update_service(
             cluster=cluster,
             service=service,
-            taskDefinition=task_def_arn
+            taskDefinition=task_def_arn,
             forceNewDeployment=True
         )
 
